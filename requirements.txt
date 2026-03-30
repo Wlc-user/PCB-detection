@@ -1,0 +1,30 @@
+# PCB缺陷检测项目依赖
+# 安装: pip install -r requirements.txt
+
+# 核心依赖
+ultralytics>=8.0.0          # YOLOv8训练和推理
+opencv-python>=4.8.0         # 图像处理
+numpy>=1.24.0                # 数值计算
+
+# API服务
+fastapi>=0.100.0             # Web框架
+uvicorn>=0.23.0              # ASGI服务器
+python-multipart>=0.0.6      # 文件上传
+pydantic>=2.0.0              # 数据验证
+
+# 部署和优化
+onnx>=1.14.0                 # ONNX格式
+onnxruntime>=1.15.0          # ONNX推理
+torch>=2.0.0                 # PyTorch后端
+
+# 工具库
+PyYAML>=6.0                  # YAML配置
+Pillow>=10.0.0               # 图片处理
+tqdm>=4.65.0                 # 进度条
+pandas>=2.0.0                 # 数据分析
+matplotlib>=3.7.0             # 可视化
+
+# 开发工具
+pytest>=7.0.0                # 单元测试
+black>=23.0.0                 # 代码格式化
+flake8>=6.0.0                 # 代码检查
