@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实际落地案例 | AutoTest Academy</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); min-height: 100vh; color: #fff; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 30px 0; border-bottom: 2px solid #ff6b6b; margin-bottom: 30px; }
+        h1 { font-size: 2.2em; background: linear-gradient(90deg, #ff6b6b, #ffd93d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
+        .card h2 { color: #ff6b6b; margin-bottom: 20px; font-size: 1.3em; }
+        .card h3 { color: #ffd93d; margin: 15px 0 10px; font-size: 1.1em; }
+        .case-box { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 18px; margin-bottom: 15px; border-left: 4px solid #10b981; }
+        .case-box.red { border-color: #ef4444; }
+        .case-box.yellow { border-color: #f59e0b; }
+        .case-box h4 { margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .case-box .tag { padding: 3px 10px; border-radius: 12px; font-size: 0.75em; }
+        .tag.ok { background: rgba(16,185,129,0.2); color: #10b981; }
+        .tag.fail { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .tag.tip { background: rgba(59,130,246,0.2); color: #3b82f6; }
+        .code-block { background: #0d1117; border-radius: 8px; padding: 15px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.5; margin: 10px 0; border: 1px solid #30363d; overflow-x: auto; }
+        .comment { color: #6a737d; } .keyword { color: #ff7b72; } pre { margin: 0; white-space: pre-wrap; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .grid-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; }
+        .grid-item h4 { color: #ff6b6b; margin-bottom: 8px; }
+        .grid-item p { color: #aaa; font-size: 0.9em; line-height: 1.5; }
+        .warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 12px; margin: 10px 0; }
+        .warn h5 { color: #f59e0b; margin-bottom: 5px; font-size: 0.9em; }
+        .succ { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 12px; margin: 10px 0; }
+        .succ h5 { color: #10b981; margin-bottom: 5px; font-size: 0.9em; }
+        .faq-q { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+        .faq-a { padding: 12px 15px; color: #aaa; font-size: 0.9em; line-height: 1.6; display: none; border-left: 3px solid #ffd93d; margin-bottom: 15px; }
+        .faq-a.show { display: block; }
+        .table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .table th, .table td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9em; }
+        .table th { background: rgba(255,107,107,0.1); color: #ff6b6b; }
+        .table td:first-child { color: #ffd93d; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo"><div class="logo-icon">🚗</div><span>AutoTest <span style="color: var(--primary)">Academy</span></span></a>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_test_framework.html" class="nav-link">测试框架</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
+            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
+            <a href="xcp_safety.html" class="nav-link">XCP标定</a>
+            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
+            <a href="real_cases.html" class="nav-link active">落地案例</a>
+        </div>
+        <div class="nav-actions"><a href="index.html" class="btn btn-ghost"><span>←</span><span class="text">返回</span></a></div>
+    </nav>
+
+    <div class="main-content" style="padding-top: 80px;">
+        <div class="container">
+            <header>
+                <h1>🔧 实际落地案例 & 常见问题</h1>
+                <p style="color: #888; margin-top: 10px;">来自一线车企/Tier1的真实项目经验总结</p>
+            </header>
+
+            <!-- 车企项目矩阵 -->
+            <div class="card">
+                <h2>🏭 量產项目矩阵</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <h4>🚗 新势力车企A</h4>
+                        <p>域控制器OTA · 12个ECU · 升级成功率99.8% · 5万车主</p>
+                    </div>
+                    <div class="grid-item">
+                        <h4>🏢 合资品牌B</h4>
+                        <p>智能座舱诊断 · UDS+DoIP · 500+ DTC · 年产30万辆</p>
+                    </div>
+                    <div class="grid-item">
+                        <h4>🚌 商用车企C</h4>
+                        <p>BMS测试 · CAN FD · 800V高压平台 · 批量1万套</p>
+                    </div>
+                    <div class="grid-item">
+                        <h4>🚕 出行平台D</h4>
+                        <p>T-Box远程诊断 · 10万终端 · 实时监控 · 年增3万</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 真实案例 -->
+            <div class="card">
+                <h2>📋 真实落地案例</h2>
+                
+                <div class="case-box">
+                    <h4>✅ 案例1: 新势力车企 - 域控制器OTA升级 <span class="tag ok">量产</span></h4>
+                    <p><strong>背景:</strong> 旗舰SUV，7个域控制器，需要整车OTA能力</p>
+                    <p><strong>方案:</strong> 主网关(0x100)→ 域控制器(以太网) → ECU(0x14/0x19)</p>
+                    <div class="code-block"><pre><span class="comment">// CAPL OTA升级主流程</span>
+<span class="keyword">void</span> OTA_Update(<span class="keyword">int</span> ecuId, <span class="keyword">int</span> swVersion)
+{
+    <span class="keyword">if</span>(CheckBattery() < 80) { <span class="comment">// 电量检查</span>
+        Write("电量不足，请充电"); <span class="keyword">return</span>;
+    }
+    <span class="keyword">if</span>(CheckNetwork() != 0) { <span class="comment">// 网络检查</span>
+        Write("网络异常"); <span class="keyword">return</span>;
+    }
+    <span class="comment">// 0x100 03 切换扩展会话</span>
+    DiagnosticSessionControl(0x03);
+    <span class="comment">// 0x27 安全解锁</span>
+    SecurityAccess(0x05, CalculateSeed(0x05));
+    <span class="comment">// 0x34 0x36 0x37 下载流程</span>
+    RequestDownload(ecuId, swVersion);
+    <span class="keyword">while</span>(TransferData()) { <span class="comment">/* 传输 */</span> }
+    RequestTransferExit();
+    <span class="comment">// 0x11 01 硬复位</span>
+    ECUReset(0x01);
+}</pre></div>
+                    <div class="succ"><h5>💡 经验总结</h5>断点续传机制、差分升级、双备份分区、回滚策略</div>
+                </div>
+
+                <div class="case-box">
+                    <h4>✅ 案例2: 合资品牌 - 智能座舱诊断系统 <span class="tag ok">量产</span></h4>
+                    <p><strong>背景:</strong> 仪表+车机+音响三合一，500+ DTC，15个ECU节点</p>
+                    <p><strong>痛点:</strong> 功能寻址响应慢、跨域DTC关联诊断困难</p>
+                    <div class="warn"><h5>⚠️ 问题</h5>功能寻址(0x7FF)广播时，所有ECU同时响应导致总线冲突</div>
+                    <div class="succ"><h5>✅ 解决</h5>改用物理寻址+分时轮询，诊断时间从45s降到8s</div>
+                </div>
+
+                <div class="case-box">
+                    <h4>✅ 案例3: 商用车企 - BMS高压安全测试 <span class="tag ok">量产</span></h4>
+                    <p><strong>背景:</strong> 800V平台，CAN FD 500k/4M，ASIL D等级</p>
+                    <p><strong>要求:</strong> ISO 26262、硬件冗余、碰撞断电</p>
+                    <div class="code-block"><pre><span class="comment">// BMS安全状态机</span>
+<span class="keyword">enum</span> BMS_State { NORMAL, WARNING, FAULT, EMERGENCY };
+BMS_State CheckHV(<span class="keyword">float</span> voltage, <span class="keyword">float</span> current) {
+    <span class="keyword">if</span>(voltage > 850 || voltage < 550) <span class="keyword">return</span> EMERGENCY;
+    <span class="keyword">if</span>(voltage > 800 || current > 300) <span class="keyword">return</span> WARNING;
+    <span class="keyword">return</span> NORMAL;
+}
+<span class="comment">// 碰撞信号检测 → 毫秒级断开继电器</span>
+<span class="keyword">on signal</span> CrashSignal {
+    HV_Relay(OFF); <span class="comment">// 继电器断开 &lt;10ms</span>
+    SendDTC(0xC00001); <span class="comment">// 记录碰撞故障</span>
+}</pre></div>
+                </div>
+            </div>
+
+            <!-- 常见问题 -->
+            <div class="card">
+                <h2>❌ 常见问题 & 解决方案</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <h4>🔴 UDS问题</h4>
+                        <p><strong>Q: 0x7F 12 subFunctionNotSupported</strong></p>
+                        <p>→ 子功能参数错误，检查是否在正确会话(扩展/编程)</p>
+                        <p><strong>Q: 0x7F 33Rp RequiredTimeDelayNotExpired</strong></p>
+                        <p>→ 安全访问时间间隔未到，增加100ms延迟</p>
+                        <p><strong>Q: 0x7F 22 conditionsNotCorrect</strong></p>
+                        <p>→ 唤醒状态不对，先发0x10切换会话</p>
+                    </div>
+                    <div class="grid-item">
+                        <h4>🔴 CAN FD问题</h4>
+                        <p><strong>Q: 只收到首帧，无连续帧</strong></p>
+                        <p>→ Block Size/_STmin配置错误，检查CANoe IL层配置</p>
+                        <p><strong>Q: DLC不一致错误</strong></p>
+                        <p>→ DLC编码映射错误，9-15应映射到9,12,16,20,24,32,48,64</p>
+                        <p><strong>Q: BRS采样点错误</strong></p>
+                        <p>→ 数据段采样点应为70-80%，仲裁段87.5%</p>
+                    </div>
+                    <div class="grid-item">
+                        <h4>🔴 Bootloader问题</h4>
+                        <p><strong>Q: 0x36响应0x72 BlockSequenceCounterError</strong></p>
+                        <p>→ BSC不连续，检查是否漏发或重发</p>
+                        <p><strong>Q: 0x34响应numberOfBlocks=0</strong></p>
+                        <p>→ 地址或大小超出范围，检查内存映射</p>
+                        <p><strong>Q: 升级后应用无法启动</strong></p>
+                        <p>→ CRC校验失败、向量表错误、堆栈溢出</p>
+                    </div>
+                    <div class="grid-item">
+                        <h4>🔴 CAPL常见坑</h4>
+                        <p><strong>Q: on message不触发</strong></p>
+                        <p>→ 检查CAN通道、波特率、滤波器配置</p>
+                        <p><strong>Q: 定时器不准</strong>
+                        <p>→ setTimerVsUse重置问题，使用setTimerFast</p>
+                        <p><strong>Q: 变量类型错误</strong></p>
+                        <p>→ int(16位) vs long(32位)，大数运算用long</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 调试技巧 -->
+            <div class="card">
+                <h2>🛠️ 调试技巧 & 生产经验</h2>
+                <table class="table">
+                    <tr><th>场景</th><th>技巧</th><th>效果</th></tr>
+                    <tr><td>诊断超时</td><td>在CANoe IG中模拟0x7F响应</td><td>快速定位超时来源</td></tr>
+                    <tr><td>总线负载</td><td>Statistics窗口监控Load%</td><td>保持&lt;70%避免丢帧</td></tr>
+                    <tr><td>多ECU同步</td><td>Capl回调函数加序列号</td><td>解决响应乱序问题</td></tr>
+                    <tr><td>OTA完整性</td><td>MD5校验+签名验证</td><td>防止篡改和损坏</td></tr>
+                    <tr><td>安全解锁</td><td>日志记录Seed-Key配对</td><td>追溯密钥泄露问题</td></tr>
+                    <tr><td>版本管理</td><td>SWCL/CVCL双版本号</td><td>满足ASPICE追溯要求</td></tr>
+                </table>
+            </div>
+
+            <!-- FAQ -->
+            <div class="card">
+                <h2>❓ 常见问答</h2>
+                <div class="faq-q" onclick="toggleFaq(this)">Q: 诊断会话和编程会话有什么区别？</div>
+                <div class="faq-a">A: 默认会话(0x01)只有基础诊断权限；扩展会话(0x03)支持更多服务如读写DID；编程会话(0x02)用于Bootloader更新，必须先解锁安全等级。</div>
+                
+                <div class="faq-q" onclick="toggleFaq(this)">Q: 为什么OTA升级需要双备份分区？</div>
+                <div class="faq-a">A: 防止升级过程中断导致砖头设备。A区运行B区下载，B区运行A区下载，任何时候都有一个可用的系统。</div>
+                
+                <div class="faq-q" onclick="toggleFaq(this)">Q: 功能安全如何落实到测试用例？</div>
+                <div class="faq-a">A: 1) 根据HARA确定安全目标 → 2) 设计安全机制测试 → 3) 注入故障验证覆盖率 → 4) 记录ISO 26262测试报告</div>
+                
+                <div class="faq-q" onclick="toggleFaq(this)">Q: 如何快速定位CAN总线问题？</div>
+                <div class="faq-a">A: 1) 检查终端电阻(60Ω正常) → 2) 用示波器看波形畸变 → 3) CANoe Trace窗口过滤错误帧 → 4) 检查ACK和CRC错误计数器</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleFaq(el) {
+            el.nextElementSibling.classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

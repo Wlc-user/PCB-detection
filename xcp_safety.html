@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>XCP标定 & ISO 26262功能安全 | AutoTest Academy</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); min-height: 100vh; color: #fff; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 30px 0; border-bottom: 2px solid #ffd700; margin-bottom: 25px; }
+        h1 { font-size: 2.2em; background: linear-gradient(90deg, #ffd700, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .card h2 { color: #ffd700; margin-bottom: 15px; font-size: 1.4em; }
+        .card h3 { color: #00d4ff; margin: 15px 0 10px; }
+        .code-block { background: #0d1117; border-radius: 10px; padding: 18px; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.6; margin: 12px 0; border: 1px solid #30363d; overflow-x: auto; }
+        .keyword { color: #ff7b72; } .comment { color: #6a737d; } .number { color: #79c0ff; }
+        .proto { color: #7ee787; } pre { margin: 0; white-space: pre-wrap; }
+        .table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .table th { background: rgba(255,215,0,0.1); color: #ffd700; }
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-tab { padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 8px; color: #888; cursor: pointer; }
+        .nav-tab.active { background: #0d1117; color: #ffd700; border: 1px solid #ffd700; }
+        .tab-content { display: none; } .tab-content.active { display: block; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .flow { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; margin: 15px 0; flex-wrap: wrap; }
+        .flow-step { padding: 12px 18px; border-radius: 10px; text-align: center; }
+        .flow-step.xcp { background: linear-gradient(135deg, #ffd700, #cc9900); }
+        .flow-step.daq { background: linear-gradient(135deg, #00d4ff, #0099cc); }
+        .flow-step.res { background: linear-gradient(135deg, #00ff88, #00cc66); }
+        .flow-arrow { color: #ffd700; font-size: 1.2em; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.85em; margin-left: 8px; }
+        .badge.asil-a { background: #4ade80; color: #000; }
+        .badge.asil-b { background: #facc15; color: #000; }
+        .badge.asil-c { background: #fb923c; color: #000; }
+        .badge.asil-d { background: #f87171; color: #000; }
+        .hex-frame { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; }
+        .hex-byte { padding: 4px 8px; background: #1a1a2e; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        .hex-byte.cmd { background: rgba(255,215,0,0.2); color: #ffd700; }
+        .hex-byte.res { background: rgba(0,255,136,0.2); color: #00ff88; }
+        .safety-item { padding: 15px; background: rgba(248,81,73,0.1); border-radius: 10px; border-left: 4px solid #f85149; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <!-- 统一导航栏 -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="logo-icon">🚗</div>
+            <span>AutoTest <span style="color: var(--primary)">Academy</span></span>
+        </a>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_test_framework.html" class="nav-link">测试框架</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
+            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
+            <a href="xcp_safety.html" class="nav-link active">XCP标定</a>
+            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
+        </div>
+
+        <div class="nav-actions">
+            <a href="index.html" class="btn btn-ghost">
+                <span>←</span><span class="text">返回</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <header><h1>XCP标定 & ISO 26262功能安全</h1></header>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('xcp')">XCP协议</button>
+            <button class="nav-tab" onclick="showTab('xcp_daq')">DAQ采集</button>
+            <button class="nav-tab" onclick="showTab('iso26262')">ISO 26262</button>
+            <button class="nav-tab" onclick="showTab('asil')">ASIL等级</button>
+            <button class="nav-tab" onclick="showTab('tools')">工具链</button>
+        </div>
+
+        <!-- XCP -->
+        <div id="xcp" class="tab-content active">
+            <div class="card">
+                <h2>XCP 协议概述</h2>
+                <p style="color:#888;margin-bottom:15px;">
+                    XCP (Universal Calibration Protocol) - ASAM标准，用于ECU标定、测量、Flash编程
+                </p>
+                <table class="table">
+                    <tr><th>特性</th><th>说明</th></tr>
+                    <tr><td>协议标准</td><td>ASAM MC-5, ISO 11791</td></tr>
+                    <tr><td>传输层</td><td>CAN/CAN FD/Ethernet/USB/SPI</td></tr>
+                    <tr><td>连接模式</td><td>Master(测试仪) → Slave(ECU)</td></tr>
+                    <tr><td>主要功能</td><td>读/写内存、标定参数、DAQ测量</td></tr>
+                </table>
+            </div>
+            
+            <div class="card">
+                <h2>XCP 命令集</h2>
+                <div class="grid-2">
+                    <div class="code-block">
+<pre><span class="comment">// 连接命令</span>
+<span class="proto">0xF0</span>: CONNECT      <span class="comment">// 建立连接</span>
+<span class="proto">0xF1</span>: DISCONNECT   <span class="comment">// 断开连接</span>
+<span class="proto">0xF2</span>: GET_STATUS   <span class="comment">// 获取状态</span>
+<span class="proto">0xF3</span>: GET_SEED     <span class="comment">// 请求种子</span>
+<span class="proto">0xF4</span>: UNLOCK       <span class="comment">// 解锁</span>
+
+<span class="comment">// 上传/下载</span>
+<span class="proto">0xF4</span>: UPLOAD        <span class="comment">// 读取内存</span>
+<span class="proto">0xF5</span>: SHORT_UPLOAD  <span class="comment">// 短读取</span>
+<span class="proto">0xE0</span>: DOWNLOAD      <span class="comment">// 写入内存</span>
+<span class="proto">0xE1</span>: DOWNLOAD_NEXT <span class="comment">// 下一块</span>
+<span class="proto">0xE2</span>: DOWNLOAD_MAX  <span class="comment">// 最大块下载</span></pre>
+                    </div>
+                    <div class="code-block">
+<pre><span class="comment">// DAQ命令</span>
+<span class="proto">0xC0</span>: GET_DAQ_LIST_SIZE    <span class="comment">// DAQ列表大小</span>
+<span class="proto">0xC1</span>: ALLOC_DAQ           <span class="comment">// 分配DAQ</span>
+<span class="proto">0xC2</span>: FREE_DAQ            <span class="comment">// 释放DAQ</span>
+<span class="proto">0xC3</span>: ALLOC_ODT           <span class="comment">// 分配ODT</span>
+<span class="proto">0xC4</span>: ALLOC_ODT_ENTRY     <span class="comment">// 分配ODT条目</span>
+<span class="proto">0xE4</span>: START_STOP_DAQ_LIST <span class="comment">// 启动/停止</span>
+<span class="proto">0xE5</span>: START_STOP_SYNC      <span class="comment">// 同步启动</span>
+<span class="proto">0xC6</span>: WRITE_DAQ           <span class="comment">// 写DAQ配置</span>
+
+<span class="comment">// 校准</span>
+<span class="proto">0xF7</span>: BUILD_CHKSUM        <span class="comment">// 校验和</span>
+<span class="proto">0xF8</span>: CLEAR_DAQ          <span class="comment">// 清除DAQ</span></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>XCP 通信示例</h2>
+                <div class="flow">
+                    <div class="flow-step xcp"><div>CONNECT</div><small>建立连接</small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step xcp"><div>SET_MTA</div><small>设置地址</small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step daq"><div>UPLOAD</div><small>读取数据</small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step xcp"><div>DOWNLOAD</div><small>写入校准</small></div>
+                </div>
+                <div class="code-block">
+<pre><span class="comment">// CONNECT</span>
+<span class="proto">TX: F0 00</span>              <span class="comment">// CONNECT, mode=0 (normal)</span>
+<span class="proto">RX: FF 01 0B 00 00</span>    <span class="comment">// RES, Resource=0x01(DAQ+STIM)</span>
+<span class="comment">                         // CTO size=11, DTO size=0</span>
+
+<span class="comment">// SET_MTA (设置内存地址)</span>
+<span class="proto">TX: F3 00 00 00 00 10 00 00</span>
+<span class="comment">// RESERVED, EXT=0, addr=0x00100000</span>
+
+<span class="comment">// UPLOAD (读取8字节)</span>
+<span class="proto">TX: F4 08</span>              <span class="comment">// UPLOAD, size=8</span>
+<span class="proto">RX: FF 11 22 33 44 55 66 77 88</span>  <span class="comment">// 读取的数据</span>
+
+<span class="comment">// DOWNLOAD (写入校准)</span>
+<span class="proto">TX: E4 08 AA BB CC DD EE FF 00 11</span>
+<span class="proto">RX: FF</span>                  <span class="comment">// 成功响应</span></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAQ -->
+        <div id="xcp_daq" class="tab-content">
+            <div class="card">
+                <h2>DAQ 数据采集</h2>
+                <p style="color:#888;margin-bottom:15px;">
+                    DAQ (Data Acquisition) 用于实时采集ECU内部信号，用于标定和验证
+                </p>
+                <div class="code-block">
+<pre><span class="comment">// DAQ 配置流程</span>
+<span class="comment">// 1. 分配DAQ列表</span>
+<span class="proto">TX: C0 00</span>              <span class="comment">// GET_DAQ_LIST_SIZE</span>
+<span class="proto">RX: FF 00 0A</span>          <span class="comment">// 10个DAQ列表可用</span>
+
+<span class="proto">TX: C1 00 0A</span>          <span class="comment">// ALLOC_DAQ, count=10</span>
+<span class="proto">RX: FF</span>
+
+<span class="comment">// 2. 分配ODT和条目</span>
+<span class="proto">TX: C3 00 00 03</span>       <span class="comment">// DAQ=0, ODT=0, count=3</span>
+<span class="proto">TX: C4 00 00 00 00 00 01</span> <span class="comment">// DAQ=0, ODT=0, idx=0, addr=?, size=1</span>
+
+<span class="comment">// 3. 配置DAQ</span>
+<span class="proto">TX: E4 00</span>              <span class="comment">// START_STOP, mode=0 (stop)</span>
+<span class="proto">TX: E4 01</span>              <span class="comment">// mode=1 (start once)</span>
+<span class="proto">TX: E4 02</span>              <span class="comment">// mode=2 (continuous)</span></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ISO 26262 -->
+        <div id="iso26262" class="tab-content">
+            <div class="card">
+                <h2>ISO 26262 功能安全概述</h2>
+                <p style="color:#888;margin-bottom:15px;">
+                    ISO 26262 是道路车辆功能安全标准，基于IEC 61508，适用于量产车辆的电气/电子系统
+                </p>
+                <table class="table">
+                    <tr><th>部分</th><th>内容</th></tr>
+                    <tr><td>Part 1</td><td>术语定义</td></tr>
+                    <tr><td>Part 2</td><td>功能安全管理</td></tr>
+                    <tr><td>Part 3</td><td>概念阶段</td></tr>
+                    <tr><td>Part 4</td><td>产品开发(系统)</td></tr>
+                    <tr><td>Part 5</td><td>产品开发(硬件)</td></tr>
+                    <tr><td>Part 6</td><td>产品开发(软件)</td></tr>
+                    <tr><td>Part 7</td><td>生产运行</td></tr>
+                    <tr><td>Part 8</td><td>支持过程</td></tr>
+                    <tr><td>Part 9</td><td>ASIL分解</td></tr>
+                    <tr><td>Part 10</td><td>指南</td></tr>
+                </table>
+            </div>
+            
+            <div class="card">
+                <h2>V模型开发流程</h2>
+                <div class="flow">
+                    <div class="flow-step xcp"><div>HARA</div><small>危害分析</small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step daq"><div>概念设计</div><small></small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step xcp"><div>系统设计</div><small></small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step daq"><div>硬件设计</div><small></small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step xcp"><div>软件设计</div><small></small></div>
+                </div>
+                <p style="color:#888;text-align:center;">← 验证 →</p>
+            </div>
+        </div>
+
+        <!-- ASIL -->
+        <div id="asil" class="tab-content">
+            <div class="card">
+                <h2>ASIL 等级定义</h2>
+                <table class="table">
+                    <tr><th>等级</th><th>严重度S</th><th>暴露度E</th><th>可控性C</th><th>目标</th></tr>
+                    <tr><td><span class="badge asil-a">ASIL A</span></td><td>0-1</td><td>≤3</td><td>≤2</td><td>低风险</td></tr>
+                    <tr><td><span class="badge asil-b">ASIL B</span></td><td>1-2</td><td>≥2</td><td>≥1</td><td>中风险</td></tr>
+                    <tr><td><span class="badge asil-c">ASIL C</span></td><td>2-3</td><td>≥3</td><td>≥2</td><td>高风险</td></tr>
+                    <tr><td><span class="badge asil-d">ASIL D</span></td><td>3</td><td>4</td><td>3</td><td>最高风险</td></tr>
+                </table>
+            </div>
+            
+            <div class="card">
+                <h2>安全机制</h2>
+                <div class="safety-item">
+                    <strong>硬件冗余</strong>
+                    <p style="color:#888;">双核锁步、冗余存储、ECC校验</p>
+                </div>
+                <div class="safety-item">
+                    <strong>看门狗</strong>
+                    <p style="color:#888;">问答式看门狗、窗口看门狗、主动监控系统</p>
+                </div>
+                <div class="safety-item">
+                    <strong>故障检测</strong>
+                    <p style="color:#888;">程序流监控、逻辑校验、时间监控</p>
+                </div>
+                <div class="safety-item">
+                    <strong>应急操作</strong>
+                    <p style="color:#888;">故障降级、安全状态进入跛行回家模式</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工具链 -->
+        <div id="tools" class="tab-content">
+            <div class="card">
+                <h2>标定工具链</h2>
+                <table class="table">
+                    <tr><th>工具</th><th>厂商</th><th>用途</th></tr>
+                    <tr><td>CANape</td><td>Vector</td><td>XCP标定+诊断</td></tr>
+                    <tr><td>INCA</td><td>ETAS</td><td>标定+测量</td></tr>
+                    <tr><td>Vehicle Spy</td><td>Intrepid</td><td>CAN/CAN FD/XCP</td></tr>
+                    <tr><td>CANalyzer</td><td>Vector</td><td>总线分析</td></tr>
+                </table>
+            </div>
+            <div class="card">
+                <h2>安全开发工具</h2>
+                <table class="table">
+                    <tr><th>工具</th><th>用途</th></tr>
+                    <tr><td>TÜV认证工具</td><td>安全分析、FMEDA</td></tr>
+                    <tr><td>Static Analysis</td><td>代码静态分析</td></tr>
+                    <tr><td>MC/DC Coverage</td><td>覆盖率测试</td></tr>
+                    <tr><td>HARA工具</td><td>危害分析</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(e => e.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

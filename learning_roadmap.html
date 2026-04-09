@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>车载测试完整学习路线 | AutoTest Academy</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); min-height: 100vh; color: #fff; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 30px 0; border-bottom: 3px solid #00d4ff; margin-bottom: 30px; }
+        h1 { font-size: 2.5em; background: linear-gradient(90deg, #00d4ff, #00ff88, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .card h2 { color: #00d4ff; margin-bottom: 15px; font-size: 1.4em; }
+        .timeline { position: relative; padding-left: 30px; }
+        .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, #00d4ff, #00ff88, #ffd700, #ff8c00); border-radius: 2px; }
+        .timeline-item { position: relative; padding: 15px 20px; margin-bottom: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 18px; width: 14px; height: 14px; background: #00d4ff; border-radius: 50%; border: 3px solid #0a0a0f; }
+        .timeline-item h3 { color: #ffd700; margin-bottom: 8px; }
+        .timeline-item p { color: #888; font-size: 0.9em; margin-bottom: 8px; }
+        .module-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .module { padding: 6px 12px; background: rgba(0,212,255,0.1); border-radius: 20px; font-size: 0.85em; color: #00d4ff; }
+        .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media(max-width: 900px) { .roadmap { grid-template-columns: 1fr; } }
+        .phase { background: rgba(0,212,255,0.05); border-radius: 15px; padding: 20px; border-top: 4px solid; }
+        .phase.p1 { border-color: #00d4ff; } .phase.p2 { border-color: #ffd700; } .phase.p3 { border-color: #ff4444; }
+        .phase h3 { margin-bottom: 15px; font-size: 1.2em; }
+        .phase.p1 h3 { color: #00d4ff; } .phase.p2 h3 { color: #ffd700; } .phase.p3 h3 { color: #ff4444; }
+        .skill { padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 10px; }
+        .skill h4 { color: #fff; margin-bottom: 5px; font-size: 0.95em; }
+        .skill p { color: #888; font-size: 0.85em; }
+        .progress { margin: 15px 0; }
+        .progress-bar { height: 25px; background: rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; }
+        .progress-fill { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9em; }
+        .difficulty { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 0.75em; margin-left: 10px; }
+        .d1 { background: #238636; } .d2 { background: #d97706; } .d3 { background: #da3633; }
+        .files-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
+        .file-item { padding: 15px; background: rgba(0,212,255,0.1); border-radius: 10px; border-left: 4px solid #00d4ff; }
+        .file-item h4 { color: #00d4ff; margin-bottom: 5px; }
+        .file-item p { color: #888; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <!-- 统一导航栏 -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="logo-icon">🚗</div>
+            <span>AutoTest <span style="color: var(--primary)">Academy</span></span>
+        </a>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="learning_roadmap.html" class="nav-link active">学习路线</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_test_framework.html" class="nav-link">测试框架</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
+            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
+            <a href="xcp_safety.html" class="nav-link">XCP标定</a>
+            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
+        </div>
+
+        <div class="nav-actions">
+            <a href="index.html" class="btn btn-ghost">
+                <span>←</span><span class="text">返回</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+    <div class="container">
+        <header><h1>🚗 车载测试完整学习路线</h1></header>
+
+        <div class="card">
+            <h2>📁 已创建的演示文件</h2>
+            <div class="files-list">
+                <div class="file-item"><h4>capl_demo.html</h4><p>CAPL基础脚本入门</p></div>
+                <div class="file-item"><h4>capl_test_framework.html</h4><p>CAPL测试框架详解</p></div>
+                <div class="file-item"><h4>uds_state_machine.html</h4><p>UDS诊断与状态机</p></div>
+                <div class="file-item"><h4>canfd_democar.html</h4><p>CAN FD与DoIP协议</p></div>
+                <div class="file-item"><h4>bootloader_ota.html</h4><p>Bootloader OTA升级</p></div>
+                <div class="file-item"><h4>odx_diagnostics.html</h4><p>ODX诊断数据库</p></div>
+                <div class="file-item"><h4>xcp_safety.html</h4><p>XCP标定与功能安全</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🗺️ 学习路线图</h2>
+            <div class="roadmap">
+                <div class="phase p1">
+                    <h3>⭐ 第一阶段: 入门</h3>
+                    <div class="skill">
+                        <h4>CAN总线协议 <span class="difficulty d1">基础</span></h4>
+                        <p>帧结构、ID、DLC、CRC、总线仲裁</p>
+                    </div>
+                    <div class="skill">
+                        <h4>CANoe基础操作</h4>
+                        <p>Trace、IG、Panel、测量配置</p>
+                    </div>
+                    <div class="skill">
+                        <h4>CAPL脚本入门 <span class="difficulty d1">基础</span></h4>
+                        <p>报文收发、定时器、环境变量</p>
+                    </div>
+                    <div class="skill">
+                        <h4>UDS诊断协议 <span class="difficulty d1">基础</span></h4>
+                        <p>0x10会话、0x27安全、0x19 DTC</p>
+                    </div>
+                </div>
+                
+                <div class="phase p2">
+                    <h3>⭐⭐ 第二阶段: 进阶</h3>
+                    <div class="skill">
+                        <h4>CAN FD协议 <span class="difficulty d2">进阶</span></h4>
+                        <p>64字节数据场、灵活速率切换</p>
+                    </div>
+                    <div class="skill">
+                        <h4>测试框架 <span class="difficulty d2">进阶</span></h4>
+                        <p>testcase、testsequence、vTESTstudio</p>
+                    </div>
+                    <div class="skill">
+                        <h4>DoIP以太网诊断 <span class="difficulty d2">进阶</span></h4>
+                        <p>TCP/UDP 13400、路由激活、诊断消息</p>
+                    </div>
+                    <div class="skill">
+                        <h4>ODX数据库 <span class="difficulty d2">进阶</span></h4>
+                        <p>诊断数据建模、XML结构、工具链</p>
+                    </div>
+                </div>
+                
+                <div class="phase p3">
+                    <h3>⭐⭐⭐ 第三阶段: 专家</h3>
+                    <div class="skill">
+                        <h4>Bootloader OTA <span class="difficulty d3">专家</span></h4>
+                        <p>0x34/36/37升级流程、安全机制</p>
+                    </div>
+                    <div class="skill">
+                        <h4>XCP标定协议 <span class="difficulty d3">专家</span></h4>
+                        <p>内存读写、DAQ采集、标定流程</p>
+                    </div>
+                    <div class="skill">
+                        <h4>ISO 26262功能安全 <span class="difficulty d3">专家</span></h4>
+                        <p>ASIL等级、HARA、安全机制</p>
+                    </div>
+                    <div class="skill">
+                        <h4>Autosar网络管理 <span class="difficulty d3">专家</span></h4>
+                        <p>OSEK NM、CanNm、状态机</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📚 完整知识体系</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h3>协议层</h3>
+                    <p>CAN · CAN FD · LIN · FlexRay · Automotive Ethernet · DoIP</p>
+                    <div class="module-list">
+                        <span class="module">CAN 2.0</span><span class="module">CAN FD</span><span class="module">LIN</span><span class="module">FlexRay</span><span class="module">100BASE-TX</span><span class="module">1000BASE-T</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <h3>诊断协议</h3>
+                    <p>UDS · OBD · DoIP · 诊断数据库</p>
+                    <div class="module-list">
+                        <span class="module">0x10 会话</span><span class="module">0x11 复位</span><span class="module">0x14 清除DTC</span><span class="module">0x19 读DTC</span><span class="module">0x22 读DID</span><span class="module">0x27 安全</span><span class="module">0x2E 写DID</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <h3>测试工具</h3>
+                    <p>CANoe · CANalyzer · vTESTstudio · CANape · INCA</p>
+                    <div class="module-list">
+                        <span class="module">CAPL</span><span class="module">Test Module</span><span class="module">Panel</span><span class="module">IG</span><span class="module">Trace</span><span class="module">Statistics</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <h3>软件架构</h3>
+                    <p>AUTOSAR · OSEK · BSW · RTE · SWC</p>
+                    <div class="module-list">
+                        <span class="module">Classic AUTOSAR</span><span class="module">Adaptive AUTOSAR</span><span class="module">DaVinci</span><span class="module">EB tresos</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <h3>功能安全</h3>
+                    <p>ISO 26262 · ASIL · FMEA · FMEDA · HARA</p>
+                    <div class="module-list">
+                        <span class="module">ASIL A/B/C/D</span><span class="module">HARA</span><span class="module">FMEA</span><span class="module">FTA</span><span class="module">安全机制</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <h3>ECU开发</h3>
+                    <p>Bootloader · OTA · XCP · 标定 · 量产</p>
+                    <div class="module-list">
+                        <span class="module">0x34 请求下载</span><span class="module">0x36 传输</span><span class="module">0x37 退出</span><span class="module">Seed-Key</span><span class="module">CRC校验</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⏱️ 推荐学习时间</h2>
+            <div class="progress"><div class="progress-bar"><div class="progress-fill" style="width:25%;background:#00d4ff;">第1阶段 4-6周</div></div></div>
+            <div class="progress"><div class="progress-bar"><div class="progress-fill" style="width:50%;background:#ffd700;">第2阶段 8-12周</div></div></div>
+            <div class="progress"><div class="progress-bar"><div class="progress-fill" style="width:100%;background:#ff4444;">第3阶段 持续实践</div></div></div>
+        </div>
+    </div>
+</body>
+</html>

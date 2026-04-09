@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RTC 视觉理解客户端</title>
+    <style>
+        body { font-family: Arial; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .video-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        video { width: 400px; background: #000; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #stats { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+        #log { background: #eee; padding: 10px; max-height: 200px; overflow-y: auto; font-family: monospace; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>RTC 实时视觉理解</h1>
+    
+    <div class="controls">
+        <label>房间号: <input type="text" id="roomId" value="test"></label>
+        <label>用户ID: <input type="text" id="userId" value="user1"></label>
+        <button onclick="joinRoom()">加入房间</button>
+        <button onclick="leaveRoom()">离开房间</button>
+        <button onclick="toggleCamera()">切换摄像头</button>
+    </div>
+    
+    <div class="video-container">
+        <div>
+            <h3>本地视频</h3>
+            <video id="localVideo" autoplay muted></video>
+        </div>
+        <div>
+            <h3>处理结果</h3>
+            <canvas id="resultCanvas"></canvas>
+        </div>
+    </div>
+    
+    <div id="stats">
+        <strong>统计:</strong>
+        <span id="fps">FPS: 0</span> |
+        <span id="detections">检测: 0</span> |
+        <span id="latency">延迟: 0ms</span>
+    </div>
+    
+    <div id="log"></div>
+    
+    <script>
+        let ws = null;
+        let pc = null;
+        let localStream = null;
+        let sending = false;
+        let frameCount = 0;
+        let lastTime = performance.now();
+        
+        function log(msg) {
+            document.getElementById('log').innerHTML += '<pre>' + msg + '</pre>';
+        }
+        
+        async function joinRoom() {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+            const serverUrl = 'ws://localhost:8080/ws';
+            
+            // 连接信令服务器
+            ws = new WebSocket(serverUrl + '?room_id=' + roomId + '&peer_id=' + userId);
+            
+            ws.onopen = () => {
+                log('[WS] 已连接');
+                initLocalStream();
+            };
+            
+            ws.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'connected') {
+                    log('[WS] 加入房间成功');
+                } else if (data.type === 'result') {
+                    updateStats(data);
+                } else if (data.type === 'offer') {
+                    await handleOffer(data);
+                } else if (data.type === 'answer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data));
+                } else if (data.type === 'ice_candidate') {
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            };
+            
+            ws.onclose = () => log('[WS] 连接关闭');
+            ws.onerror = (e) => log('[WS] 错误: ' + e);
+        }
+        
+        async function initLocalStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                document.getElementById('localVideo').srcObject = localStream;
+                
+                // 创建RTCPeerConnection
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                
+                pc.onicecandidate = (e) => {
+                    if (e.candidate && ws) {
+                        ws.send(JSON.stringify({
+                            type: 'ice_candidate',
+                            candidate: e.candidate
+                        }));
+                    }
+                };
+                
+                // 添加本地视频轨道
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+                
+                // 创建数据通道
+                const dc = pc.createDataChannel('stream');
+                setupDataChannel(dc);
+                
+                // 创建并发送offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                ws.send(JSON.stringify({ type: 'offer', sdp: offer.sdp }));
+                
+                log('[WebRTC] 开始推流');
+                sending = true;
+                sendFrames();
+                
+            } catch (e) {
+                log('[错误] 无法获取摄像头: ' + e);
+            }
+        }
+        
+        function setupDataChannel(dc) {
+            dc.onopen = () => log('[DC] 数据通道打开');
+            dc.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.detections) {
+                        drawResults(data);
+                    }
+                } catch (err) {}
+            };
+        }
+        
+        async function sendFrames() {
+            if (!sending || !localStream) return;
+            
+            const video = document.getElementById('localVideo');
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 480;
+            const ctx = canvas.getContext('2d');
+            
+            async function captureAndSend() {
+                if (!sending) return;
+                
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.7));
+                const reader = new FileReader();
+                
+                reader.onload = () => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'frame',
+                            frame_id: 'frame_' + frameCount++,
+                            timestamp: Date.now(),
+                            data: reader.result.split(',')[1]
+                        }));
+                    }
+                };
+                reader.readAsDataURL(blob);
+                
+                frameCount++;
+                document.getElementById('fps').textContent = 'FPS: ' + (frameCount / ((performance.now() - lastTime) / 1000)).toFixed(1);
+                
+                setTimeout(captureAndSend, 100); // 10 FPS
+            }
+            
+            captureAndSend();
+        }
+        
+        function drawResults(data) {
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 640;
+            canvas.height = 480;
+            ctx.drawImage(document.getElementById('localVideo'), 0, 0);
+            
+            ctx.strokeStyle = '#00ff00';
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '16px Arial';
+            
+            data.detections.forEach(d => {
+                const [x1, y1, x2, y2] = d.bbox;
+                ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+                ctx.fillText(d.class_name + ' ' + d.confidence.toFixed(2), x1, y1-5);
+            });
+            
+            document.getElementById('detections').textContent = '检测: ' + data.detection_count;
+            document.getElementById('latency').textContent = '延迟: ' + data.processing_time_ms + 'ms';
+        }
+        
+        function updateStats(data) {
+            drawResults(data);
+        }
+        
+        function toggleCamera() {
+            sending = !sending;
+            log(sending ? '[摄像头] 开启' : '[摄像头] 关闭');
+        }
+        
+        function leaveRoom() {
+            sending = false;
+            if (ws) ws.close();
+            if (pc) pc.close();
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            log('[房间] 已离开');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoTest Academy - 车载测试学习平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0a0a0f;
+            --darker: #12121a;
+            --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.08);
+            --text: #ffffff;
+            --text-muted: #8b949e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 背景效果 */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow-1 {
+            top: -200px;
+            left: -200px;
+            background: var(--primary);
+        }
+
+        .bg-glow-2 {
+            bottom: -200px;
+            right: -200px;
+            background: var(--secondary);
+        }
+
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(10,10,15,0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .nav-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 10px 18px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            background: var(--card);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: rgba(0,212,255,0.1);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #00a8cc);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,212,255,0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--card);
+            border-color: var(--primary);
+        }
+
+        /* 主内容 */
+        .main {
+            position: relative;
+            z-index: 1;
+            padding-top: 70px;
+        }
+
+        /* Hero区域 */
+        .hero {
+            padding: 100px 40px 80px;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 30px;
+            font-size: 0.85em;
+            color: var(--primary);
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-size: 4em;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero h1 span {
+            display: block;
+            font-size: 0.5em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .hero-desc {
+            font-size: 1.2em;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* 模块卡片网格 */
+        .modules-section {
+            padding: 60px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-header h2 {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.1em;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+        }
+
+        .module-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--card-color), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--card-color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .module-card:hover::before {
+            opacity: 1;
+        }
+
+        .module-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6em;
+            margin-bottom: 20px;
+        }
+
+        .module-title {
+            font-size: 1.25em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .module-desc {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .module-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .module-tag {
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            font-size: 0.75em;
+            color: var(--text-muted);
+        }
+
+        .module-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .module-level {
+            display: flex;
+            gap: 4px;
+        }
+
+        .level-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .level-dot.active {
+            background: var(--card-color);
+        }
+
+        .module-link {
+            color: var(--card-color);
+            font-size: 0.9em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        /* 特性区域 */
+        .features-section {
+            padding: 80px 40px;
+            background: var(--darker);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        /* 页脚 */
+        .footer {
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5em;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-stats {
+                gap: 30px;
+            }
+
+            .stat-value {
+                font-size: 1.8em;
+            }
+        }
+
+        /* 动画 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-logo">
+            <div class="logo-icon">🚗</div>
+            <span>AutoTest <span style="color: var(--primary)">Academy</span></span>
+        </div>
+        
+        <div class="nav-links">
+            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_test_framework.html" class="nav-link">测试框架</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
+            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
+            <a href="xcp_safety.html" class="nav-link">XCP标定</a>
+            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
+            <a href="real_cases.html" class="nav-link" style="color: #ff6b6b;">落地案例</a>
+            <a href="skill_levels.html" class="nav-link" style="color: #f59e0b;">技能等级</a>
+            <a href="support.html" class="nav-link" style="color: #10b981;">支持</a>
+            <a href="pricing.html" class="nav-link" style="color: #10b981;">☕ 支持</a>
+        </div>
+
+        <div class="nav-actions">
+            <a href="learning_roadmap.html" class="btn btn-primary">
+                🚀 开始学习
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main">
+        <!-- Hero区域 -->
+        <section class="hero">
+            <div class="hero-badge">
+                <span>🎓</span>
+                <span>车载测试工程师必备技能平台</span>
+            </div>
+            
+            <h1>
+                车载测试
+                <span>从入门到专家的系统化学习路径</span>
+            </h1>
+            
+            <p class="hero-desc">
+                涵盖 CAN/CAN FD 协议、UDS 诊断、Bootloader 升级、XCP 标定、Autosar 网络管理等功能安全关键技术的交互式学习平台
+            </p>
+
+            <div class="hero-actions">
+                <a href="learning_roadmap.html" class="btn btn-primary" style="padding: 14px 32px; font-size: 1em;">
+                    📚 查看完整学习路线
+                </a>
+                <a href="capl_demo.html" class="btn btn-ghost" style="padding: 14px 32px; font-size: 1em;">
+                    ⚡ 快速开始
+                </a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-value">8+</div>
+                    <div class="stat-label">核心模块</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">50+</div>
+                    <div class="stat-label">交互演示</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">100+</div>
+                    <div class="stat-label">代码示例</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">24/7</div>
+                    <div class="stat-label">在线学习</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 模块卡片 -->
+        <section class="modules-section">
+            <div class="section-header">
+                <h2>🎯 核心学习模块</h2>
+                <p>每个模块都包含交互式演示、代码示例和实践练习</p>
+            </div>
+
+            <div class="modules-grid">
+                <!-- CAPL基础 -->
+                <div class="module-card" style="--card-color: #10b981;" onclick="location.href='capl_demo.html'">
+                    <div class="module-icon" style="background: rgba(16,185,129,0.15);">
+                        📝
+                    </div>
+                    <div class="module-title">CAPL 脚本入门</div>
+                    <div class="module-desc">
+                        学习 CANoe 中的 CAPL 脚本语言，掌握报文收发、定时器、环境变量等基础用法
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">CANoe</span>
+                        <span class="module-tag">onMessage</span>
+                        <span class="module-tag">Timer</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- CAPL测试框架 -->
+                <div class="module-card" style="--card-color: #059669;" onclick="location.href='capl_test_framework.html'">
+                    <div class="module-icon" style="background: rgba(5,150,105,0.15);">
+                        🧪
+                    </div>
+                    <div class="module-title">CAPL 测试框架</div>
+                    <div class="module-desc">
+                        深入学习 testcase、testsequence、检测函数等高级测试框架特性
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">testcase</span>
+                        <span class="module-tag">testsequence</span>
+                        <span class="module-tag">vTESTstudio</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- UDS诊断 -->
+                <div class="module-card" style="--card-color: #f59e0b;" onclick="location.href='uds_state_machine.html'">
+                    <div class="module-icon" style="background: rgba(245,158,11,0.15);">
+                        🔧
+                    </div>
+                    <div class="module-title">UDS 诊断协议</div>
+                    <div class="module-desc">
+                        掌握 ISO 14229 UDS 协议，包括会话控制、安全访问、DTC 诊断等功能
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">0x10 会话</span>
+                        <span class="module-tag">0x27 安全</span>
+                        <span class="module-tag">0x19 DTC</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- CAN FD -->
+                <div class="module-card" style="--card-color: #3b82f6;" onclick="location.href='canfd_democar.html'">
+                    <div class="module-icon" style="background: rgba(59,130,246,0.15);">
+                        🚀
+                    </div>
+                    <div class="module-title">CAN FD & DoIP</div>
+                    <div class="module-desc">
+                        学习 CAN FD 高速协议和 DoIP 以太网诊断，实现 64 字节大帧传输
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">CAN FD</span>
+                        <span class="module-tag">DoIP</span>
+                        <span class="module-tag">13400</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- Bootloader OTA -->
+                <div class="module-card" style="--card-color: #ef4444;" onclick="location.href='bootloader_ota.html'">
+                    <div class="module-icon" style="background: rgba(239,68,68,0.15);">
+                        🔄
+                    </div>
+                    <div class="module-title">Bootloader OTA</div>
+                    <div class="module-desc">
+                        掌握 ECU 程序更新流程，0x34/0x36/0x37 服务及安全机制实现
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">0x34 下载</span>
+                        <span class="module-tag">0x36 传输</span>
+                        <span class="module-tag">OTA</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- XCP标定 -->
+                <div class="module-card" style="--card-color: #8b5cf6;" onclick="location.href='xcp_safety.html'">
+                    <div class="module-icon" style="background: rgba(139,92,246,0.15);">
+                        📊
+                    </div>
+                    <div class="module-title">XCP 标定 & 安全</div>
+                    <div class="module-desc">
+                        学习 XCP 协议实现 ECU 参数标定，掌握 ISO 26262 功能安全概念
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">XCP</span>
+                        <span class="module-tag">标定</span>
+                        <span class="module-tag">ASIL</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- ODX诊断 -->
+                <div class="module-card" style="--card-color: #06b6d4;" onclick="location.href='odx_diagnostics.html'">
+                    <div class="module-icon" style="background: rgba(6,182,212,0.15);">
+                        🗄️
+                    </div>
+                    <div class="module-title">ODX 诊断数据库</div>
+                    <div class="module-desc">
+                        了解 ODX 2.0/2.2 诊断数据建模，掌握诊断数据库的 XML 结构和使用
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">ODX 2.2</span>
+                        <span class="module-tag">ODX-C</span>
+                        <span class="module-tag">Vector</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot"></div>
+                            <div class="level-dot"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- PCB检测 -->
+                <div class="module-card" style="--card-color: #00d4ff;" onclick="location.href='pcb_module_visualization.html'">
+                    <div class="module-icon" style="background: rgba(0,212,255,0.15);">
+                        🔍
+                    </div>
+                    <div class="module-title">PCB 缺陷检测</div>
+                    <div class="module-desc">
+                        基于深度学习的 PCB 缺陷检测系统，包含数据采集、模型训练、API服务完整流程
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">YOLOv8</span>
+                        <span class="module-tag">OpenCV</span>
+                        <span class="module-tag">REST API</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                        </div>
+                        <span class="module-link">开始学习 →</span>
+                    </div>
+                </div>
+
+                <!-- 实际落地案例 -->
+                <div class="module-card" style="--card-color: #ff6b6b;" onclick="location.href='real_cases.html'">
+                    <div class="module-icon" style="background: rgba(255,107,107,0.15);">
+                        🔧
+                    </div>
+                    <div class="module-title">实际落地案例</div>
+                    <div class="module-desc">
+                        来自一线车企/Tier1的真实项目经验，包含量产问题、调试技巧、解决方案
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">OTA升级</span>
+                        <span class="module-tag">常见问题</span>
+                        <span class="module-tag">调试技巧</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                        </div>
+                        <span class="module-link" style="color: #ff6b6b;">查看案例 →</span>
+                    </div>
+                </div>
+
+                <!-- 支持我们 -->
+                <div class="module-card" style="--card-color: #10b981;" onclick="location.href='support.html'">
+                    <div class="module-icon" style="background: rgba(16,185,129,0.15);">
+                        ☕
+                    </div>
+                    <div class="module-title">支持我们</div>
+                    <div class="module-desc">
+                        服务器需要电费维持，一杯奶茶钱，让平台走得更远
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">¥1</span>
+                        <span class="module-tag">支付宝</span>
+                        <span class="module-tag">持续运营</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot"></div>
+                            <div class="level-dot"></div>
+                        </div>
+                        <span class="module-link" style="color: #10b981;">扫码支持 →</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+                    <div class="module-desc">
+                        来自一线车企/Tier1的真实项目经验，包含量产问题、调试技巧、解决方案
+                    </div>
+                    <div class="module-tags">
+                        <span class="module-tag">OTA升级</span>
+                        <span class="module-tag">常见问题</span>
+                        <span class="module-tag">调试技巧</span>
+                    </div>
+                    <div class="module-meta">
+                        <div class="module-level">
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                            <div class="level-dot active"></div>
+                        </div>
+                        <span class="module-link" style="color: #ff6b6b;">查看案例 →</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 特性区域 -->
+        <section class="features-section">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎮</div>
+                    <h3>交互式演示</h3>
+                    <p>每个知识点都配有可操作的交互演示，边学边练</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>真实代码示例</h3>
+                    <p>来自企业项目的真实代码片段，可直接参考使用</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>状态机可视化</h3>
+                    <p>复杂协议流程以动画形式呈现，一目了然</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>响应式设计</h3>
+                    <p>支持桌面和移动设备，随时随地学习</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <p>AutoTest Academy - 车载测试学习平台 © 2024</p>
+        <p style="margin-top: 8px; opacity: 0.6;">CANoe · CAPL · UDS · AUTOSAR · ISO 26262</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人物流感知系统 - Logistics Perception</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #0f3460;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .video-section {
+            background: #0d1b2a;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        #videoFrame {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        select, input[type="text"] {
+            background: #1b2838;
+            border: 1px solid #2a3a4a;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 217, 255, 0.3);
+        }
+        
+        button.stop {
+            background: linear-gradient(135deg, #ff4757 0%, #c0392b 100%);
+        }
+        
+        button.connect {
+            background: linear-gradient(135deg, #2ed573 0%, #1e8449 100%);
+        }
+        
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .panel {
+            background: #0d1b2a;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .panel h3 {
+            font-size: 1.1rem;
+            color: #00d9ff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .stat-card {
+            background: #1b2838;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .stat-card.person .stat-value { color: #00d9ff; }
+        .stat-card.vehicle .stat-value { color: #2ed573; }
+        .stat-card.obstacle .stat-value { color: #ff4757; }
+        .stat-card.scene .stat-value { color: #ffa502; }
+        
+        .object-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .object-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #1b2838;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .object-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .object-info {
+            flex: 1;
+        }
+        
+        .object-name {
+            font-weight: 600;
+        }
+        
+        .object-meta {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .track-id {
+            background: #0f3460;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #00d9ff;
+        }
+        
+        .sse-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #1b2838;
+            border-radius: 8px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        
+        .status-dot.connected {
+            background: #2ed573;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1b2838;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #2a3a4a;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a4a5a;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>无人物流感知系统</h1>
+            <p>Logistics Perception System - 分割 · 检测 · 分类 · 追踪</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <canvas id="videoFrame"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label>视频源:</label>
+                        <select id="streamType">
+                            <option value="camera">摄像头</option>
+                            <option value="rtsp">RTSP流</option>
+                            <option value="http">HTTP流</option>
+                        </select>
+                        <input type="text" id="sourceUrl" placeholder="0" style="width: 200px;">
+                    </div>
+                    
+                    <button id="addBtn" onclick="addStream()">添加流</button>
+                    <button id="startBtn" class="connect" onclick="startStream()">开始</button>
+                    <button id="stopBtn" class="stop" onclick="stopStream()">停止</button>
+                    <button onclick="toggleSSE()">连接SSE</button>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00d9ff;"></div>
+                        <span>人员</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2ed573;"></div>
+                        <span>车辆</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffa502;"></div>
+                        <span>叉车</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff4757;"></div>
+                        <span>障碍物</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #a55eea;"></div>
+                        <span>货物</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="panel">
+                    <h3>实时统计</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card person">
+                            <div class="stat-value" id="personCount">0</div>
+                            <div class="stat-label">人员</div>
+                        </div>
+                        <div class="stat-card vehicle">
+                            <div class="stat-value" id="vehicleCount">0</div>
+                            <div class="stat-label">车辆/设备</div>
+                        </div>
+                        <div class="stat-card obstacle">
+                            <div class="stat-value" id="obstacleCount">0</div>
+                            <div class="stat-label">障碍物</div>
+                        </div>
+                        <div class="stat-card scene">
+                            <div class="stat-value" id="sceneType">-</div>
+                            <div class="stat-label">场景类型</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3>SSE连接状态</h3>
+                    <div class="sse-status">
+                        <div class="status-dot" id="sseDot"></div>
+                        <span id="sseStatus">未连接</span>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3>检测物体列表</h3>
+                    <div class="object-list" id="objectList">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <p>暂无检测结果</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全局状态
+        let currentStreamId = null;
+        let frameUpdateInterval = null;
+        let eventSource = null;
+        let lastFrameId = -1;
+        
+        // 类别颜色映射
+        const categoryColors = {
+            'person': '#00d9ff',
+            'vehicle': '#2ed573',
+            'forklift': '#ffa502',
+            'robot': '#ff9f43',
+            'box': '#a55eea',
+            'obstacle': '#ff4757',
+            'unknown': '#888'
+        };
+        
+        // 类别图标
+        const categoryIcons = {
+            'person': '🚶',
+            'vehicle': '🚗',
+            'forklift': '🚜',
+            'robot': '🤖',
+            'box': '📦',
+            'obstacle': '⚠️',
+            'unknown': '❓'
+        };
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('videoFrame');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置canvas尺寸
+            canvas.width = 1280;
+            canvas.height = 720;
+            
+            // 绘制初始画面
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#666';
+            ctx.font = '20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('点击"添加流"开始', canvas.width / 2, canvas.height / 2);
+        });
+        
+        // 添加流
+        async function addStream() {
+            const streamType = document.getElementById('streamType').value;
+            const sourceUrl = document.getElementById('sourceUrl').value || '0';
+            
+            try {
+                const response = await fetch('/api/streams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stream_type: streamType,
+                        source: sourceUrl
+                    })
+                });
+                
+                const data = await response.json();
+                currentStreamId = data.id;
+                console.log('Stream created:', currentStreamId);
+            } catch (error) {
+                console.error('Add stream failed:', error);
+            }
+        }
+        
+        // 开始流
+        async function startStream() {
+            if (!currentStreamId) {
+                await addStream();
+            }
+            
+            try {
+                await fetch(`/api/streams/${currentStreamId}/start`, {
+                    method: 'POST'
+                });
+                
+                // 开始更新帧
+                frameUpdateInterval = setInterval(updateFrame, 100);
+            } catch (error) {
+                console.error('Start stream failed:', error);
+            }
+        }
+        
+        // 停止流
+        async function stopStream() {
+            if (!currentStreamId) return;
+            
+            try {
+                await fetch(`/api/streams/${currentStreamId}/stop`, {
+                    method: 'POST'
+                });
+                
+                clearInterval(frameUpdateInterval);
+            } catch (error) {
+                console.error('Stop stream failed:', error);
+            }
+        }
+        
+        // 更新帧
+        async function updateFrame() {
+            if (!currentStreamId) return;
+            
+            try {
+                const response = await fetch(`/api/streams/${currentStreamId}/frame`);
+                const data = await response.json();
+                
+                displayFrame(data.image);
+                
+                // 获取感知结果
+                const perfResponse = await fetch(`/api/streams/${currentStreamId}/perception`);
+                const perfData = await perfResponse.json();
+                
+                updateStats(perfData);
+                updateObjectList(perfData.objects);
+                
+            } catch (error) {
+                // console.error('Update frame failed:', error);
+            }
+        }
+        
+        // 显示帧
+        function displayFrame(imageData) {
+            const canvas = document.getElementById('videoFrame');
+            const ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = imageData;
+        }
+        
+        // 更新统计
+        function updateStats(data) {
+            document.getElementById('personCount').textContent = data.stats?.person_count || 0;
+            document.getElementById('vehicleCount').textContent = data.stats?.vehicle_count || 0;
+            document.getElementById('obstacleCount').textContent = data.stats?.obstacle_count || 0;
+            document.getElementById('sceneType').textContent = getSceneLabel(data.scene_type);
+        }
+        
+        // 更新物体列表
+        function updateObjectList(objects) {
+            const container = document.getElementById('objectList');
+            
+            if (!objects || objects.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <p>暂无检测结果</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = objects.map(obj => `
+                <div class="object-item">
+                    <div class="object-icon" style="background: ${categoryColors[obj.category] || '#888'}20; color: ${categoryColors[obj.category] || '#888'}">
+                        ${categoryIcons[obj.category] || '❓'}
+                    </div>
+                    <div class="object-info">
+                        <div class="object-name">${obj.class_name}</div>
+                        <div class="object-meta">置信度: ${(obj.confidence * 100).toFixed(1)}%</div>
+                    </div>
+                    <div class="track-id">ID: ${obj.track_id}</div>
+                </div>
+            `).join('');
+        }
+        
+        // SSE连接
+        async function toggleSSE() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+                document.getElementById('sseDot').classList.remove('connected');
+                document.getElementById('sseStatus').textContent = '未连接';
+                return;
+            }
+            
+            try {
+                eventSource = new EventSource('/sse/perception');
+                
+                eventSource.onopen = () => {
+                    document.getElementById('sseDot').classList.add('connected');
+                    document.getElementById('sseStatus').textContent = '已连接';
+                };
+                
+                eventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'heartbeat') return;
+                        if (data.frame_id === lastFrameId) return;
+                        lastFrameId = data.frame_id;
+                        
+                        updateStats(data);
+                        updateObjectList(data.objects);
+                        
+                        // 更新帧
+                        if (data.stream_id === currentStreamId) {
+                            updateFrame();
+                        }
+                    } catch (e) {
+                        console.error('SSE parse error:', e);
+                    }
+                };
+                
+                eventSource.onerror = () => {
+                    document.getElementById('sseDot').classList.remove('connected');
+                    document.getElementById('sseStatus').textContent = '连接断开';
+                    eventSource = null;
+                };
+            } catch (error) {
+                console.error('SSE connection failed:', error);
+            }
+        }
+        
+        // 获取场景标签
+        function getSceneLabel(scene) {
+            const labels = {
+                'warehouse': '仓库',
+                'vehicle': '无人车',
+                'mixed': '混合'
+            };
+            return labels[scene] || scene;
+        }
+    </script>
+</body>
+</html>

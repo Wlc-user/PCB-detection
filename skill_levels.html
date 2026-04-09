@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技能等级体系 | AutoTest Academy</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0a0a0f,#1a1a2e);min-height:100vh;color:#fff}.container{max-width:1400px;margin:0 auto;padding:90px 20px 40px}h1{font-size:1.8em;background:linear-gradient(90deg,#00d4ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:25px;text-align:center}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:25px}.card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px;position:relative}.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}.l2::before{background:#10b981}.l3::before{background:#3b82f6}.l4::before{background:#f59e0b}.l5::before{background:#ef4444}.badge{display:inline-flex;padding:3px 10px;border-radius:12px;font-size:.75em;font-weight:600;margin-bottom:8px}.l2 .badge{background:rgba(16,185,129,0.2);color:#10b981}.l3 .badge{background:rgba(59,130,246,0.2);color:#3b82f6}.l4 .badge{background:rgba(245,158,11,0.2);color:#f59e0b}.l5 .badge{background:rgba(239,68,68,0.2);color:#ef4444}.card h3{font-size:.95em;margin-bottom:5px}.card p{color:#8b949e;font-size:.75em;line-height:1.4}.salary{margin-top:10px;font-size:.95em;font-weight:700;color:#00d4ff}.viz{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.viz-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px}.viz-card h2{font-size:.95em;margin-bottom:15px}.chart{height:280px}.tree{display:flex;flex-direction:column;gap:8px}.node{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.02);border-radius:8px;border-left:3px solid;transition:all .3s}.node:hover{background:rgba(255,255,255,0.05);transform:translateX(5px)}.l2{border-color:#10b981}.l3{border-color:#3b82f6}.l4{border-color:#f59e0b}.l5{border-color:#ef4444}.icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:1em}.l2 .icon{background:rgba(16,185,129,0.2)}.l3 .icon{background:rgba(59,130,246,0.2)}.l4 .icon{background:rgba(245,158,11,0.2)}.l5 .icon{background:rgba(239,68,68,0.2)}.info h4{font-size:.85em;margin-bottom:2px}.info p{color:#8b949e;font-size:.7em}.tbl{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px;margin-bottom:20px}.tbl h2{font-size:.95em;margin-bottom:15px}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:.75em;text-align:left}th{background:rgba(255,255,255,0.03);font-weight:600}.bar{width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}.bar span{height:100%;border-radius:2px;display:block}.l2 span{background:#10b981}.l3 span{background:#3b82f6}.l4 span{background:#f59e0b}.l5 span{background:#ef4444}.path{display:flex;justify-content:space-between;align-items:center;position:relative;padding:20px 8%}.path::before{content:'';position:absolute;top:42px;left:10%;right:10%;height:3px;background:linear-gradient(90deg,#10b981,#3b82f6,#f59e0b,#ef4444);border-radius:2px}.step{text-align:center;flex:1;position:relative;z-index:1}.step .c{width:45px;height:45px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:700}.l2 .c{background:#10b981}.l3 .c{background:#3b82f6}.l4 .c{background:#f59e0b}.l5 .c{background:#ef4444}.step h4{font-size:.85em}.step p{color:#8b949e;font-size:.65em}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.viz{grid-template-columns:1fr}}@media(max-width:600px){.cards{grid-template-columns:1fr}.path{flex-direction:column;gap:15px}.path::before{display:none}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo"><div class="logo-icon">🚗</div><span>AutoTest <span style="color:var(--primary)">Academy</span></span></a>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
+            <a href="skill_levels.html" class="nav-link active">技能等级</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="real_cases.html" class="nav-link" style="color:#ff6b6b">落地案例</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>📊 L2-L5 技能等级可视化</h1>
+        <div class="cards">
+            <div class="card l2"><div class="badge">🎯 L2 初级</div><h3>入门级工程师</h3><p>CAN总线基础、UDS常用服务、测试用例执行、问题记录</p><div class="salary">15-25K · 0-2年</div></div>
+            <div class="card l3"><div class="badge">⚡ L3 中级</div><h3>独立担当</h3><p>CAPL编程、CAN FD、Bootloader、独立搭建测试环境</p><div class="salary">25-40K · 2-5年</div></div>
+            <div class="card l4"><div class="badge">🔥 L4 高级</div><h3>技术专家</h3><p>XCP标定、功能安全、Autosar网络、主导演目攻关</p><div class="salary">40-60K · 5-8年</div></div>
+            <div class="card l5"><div class="badge">👑 L5 架构师</div><h3>团队引领</h3><p>诊断架构设计、流程规范制定、技术标准引领</p><div class="salary">60-100K+ · 8年+</div></div>
+        </div>
+        <div class="viz">
+            <div class="viz-card"><h2>📡 技能雷达图</h2><div class="chart"><canvas id="radarChart"></canvas></div></div>
+            <div class="viz-card"><h2>🌳 技能进阶树</h2>
+                <div class="tree">
+                    <div class="node l2"><div class="icon">📝</div><div class="info"><h4>CAPL 基础</h4><p>报文收发、定时器、环境变量</p></div></div>
+                    <div class="node l3"><div class="icon">🔧</div><div class="info"><h4>UDS 深度应用</h4><p>安全访问0x27、DTC状态机、0x34下载</p></div></div>
+                    <div class="node l4"><div class="icon">📊</div><div class="info"><h4>XCP 标定 & 功能安全</h4><p>XCP/CCP协议、ASAM MCD、ISO 26262</p></div></div>
+                    <div class="node l5"><div class="icon">🏛️</div><div class="info"><h4>诊断架构设计</h4><p>ODX全链路、Autosar SDV、规范制定</p></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="tbl"><h2>📋 技能对照表</h2>
+            <table>
+                <thead><tr><th>技能领域</th><th>L2</th><th>L3</th><th>L4</th><th>L5</th></tr></thead>
+                <tbody>
+                    <tr><td>CAN/CAN FD</td><td><div class="bar l2"><span style="width:60%"></span></div>60%</td><td><div class="bar l3"><span style="width:80%"></span></div>80%</td><td><div class="bar l4"><span style="width:95%"></span></div>95%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>UDS 诊断</td><td><div class="bar l2"><span style="width:40%"></span></div>40%</td><td><div class="bar l3"><span style="width:75%"></span></div>75%</td><td><div class="bar l4"><span style="width:90%"></span></div>90%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>CAPL 编程</td><td><div class="bar l2"><span style="width:50%"></span></div>50%</td><td><div class="bar l3"><span style="width:85%"></span></div>85%</td><td><div class="bar l4"><span style="width:95%"></span></div>95%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>Bootloader</td><td><div class="bar l2"><span style="width:20%"></span></div>20%</td><td><div class="bar l3"><span style="width:70%"></span></div>70%</td><td><div class="bar l4"><span style="width:90%"></span></div>90%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>XCP 标定</td><td><div class="bar l2"><span style="width:10%"></span></div>10%</td><td><div class="bar l3"><span style="width:40%"></span></div>40%</td><td><div class="bar l4"><span style="width:85%"></span></div>85%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>ISO 26262 安全</td><td><div class="bar l2"><span style="width:5%"></span></div>5%</td><td><div class="bar l3"><span style="width:30%"></span></div>30%</td><td><div class="bar l4"><span style="width:80%"></span></div>80%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>Autosar 网络</td><td><div class="bar l2"><span style="width:10%"></span></div>10%</td><td><div class="bar l3"><span style="width:40%"></span></div>40%</td><td><div class="bar l4"><span style="width:75%"></span></div>75%</td><td><div class="bar l5"><span style="width:100%"></span></div>100%</td></tr>
+                    <tr><td>ODX 数据库</td><td><div class="bar l2"><span style="width:5%"></span></div>5%</td><td><div class="bar l3"><span style="width:25%"></span></div>25%</td><td><div class="bar l4"><span style="width:60%"></span></div>60%</td><td><div class="bar l5"><span style="width:90%"></span></div>90%</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="tbl"><h2>🚀 职业发展路径</h2>
+            <div class="path">
+                <div class="step l2"><div class="c">L2</div><h4>初级工程师</h4><p>测试执行</p></div>
+                <div class="step l3"><div class="c">L3</div><h4>中级工程师</h4><p>用例设计</p></div>
+                <div class="step l4"><div class="c">L4</div><h4>高级工程师</h4><p>技术攻关</p></div>
+                <div class="step l5"><div class="c">L5</div><h4>架构师/专家</h4><p>规范制定</p></div>
+            </div>
+        </div>
+    </div>
+    <script>new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['CAN/CAN FD','UDS诊断','CAPL编程','Bootloader','XCP标定','功能安全','Autosar','ODX'],datasets:[{label:'L2 初级',data:[60,40,50,20,10,5,10,5],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',pointBackgroundColor:'#10b981'},{label:'L3 中级',data:[80,75,85,70,40,30,40,25],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',pointBackgroundColor:'#3b82f6'},{label:'L4 高级',data:[95,90,95,90,85,80,75,60],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',pointBackgroundColor:'#f59e0b'},{label:'L5 专家',data:[100,100,100,100,100,100,100,90],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',pointBackgroundColor:'#ef4444'}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{angleLines:{color:'rgba(255,255,255,0.1)'},grid:{color:'rgba(255,255,255,0.1)'},pointLabels:{color:'#8b949e',font:{size:10}},ticks:{display:false}}},plugins:{legend:{labels:{color:'#fff',font:{size:10}}}}}});</script>
+</body>
+</html>

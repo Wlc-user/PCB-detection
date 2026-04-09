@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Bootloader OTA 详解 | AutoTest Academy</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); min-height: 100vh; color: #fff; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 30px 0; border-bottom: 2px solid #ff4444; margin-bottom: 25px; }
+        h1 { font-size: 2.2em; background: linear-gradient(90deg, #ff4444, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .card h2 { color: #ff4444; margin-bottom: 15px; font-size: 1.4em; }
+        .card h3 { color: #ffd700; margin: 15px 0 10px; }
+        .code-block { background: #0d1117; border-radius: 10px; padding: 18px; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.6; margin: 12px 0; border: 1px solid #30363d; overflow-x: auto; }
+        .keyword { color: #ff7b72; } .comment { color: #6a737d; } .number { color: #79c0ff; }
+        .proto { color: #7ee787; } .type { color: #ffa657; } pre { margin: 0; white-space: pre-wrap; }
+        .table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .table th { background: rgba(255,68,68,0.1); color: #ff4444; }
+        .flow { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; margin: 15px 0; flex-wrap: wrap; }
+        .flow-step { padding: 12px 18px; border-radius: 10px; text-align: center; }
+        .flow-step.step { background: linear-gradient(135deg, #ff4444, #cc3333); }
+        .flow-step.data { background: linear-gradient(135deg, #ffd700, #ccaa00); }
+        .flow-step.res { background: linear-gradient(135deg, #00ff88, #00cc66); }
+        .flow-step.sec { background: linear-gradient(135deg, #7c3aed, #6b21a8); }
+        .flow-arrow { color: #ffd700; font-size: 1.2em; }
+        .state-box { padding: 15px; background: rgba(255,68,68,0.1); border-radius: 10px; border-left: 4px solid #ff4444; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <!-- 统一导航栏 -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="logo-icon">🚗</div>
+            <span>AutoTest <span style="color: var(--primary)">Academy</span></span>
+        </a>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_test_framework.html" class="nav-link">测试框架</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
+            <a href="bootloader_ota.html" class="nav-link active">Bootloader</a>
+            <a href="xcp_safety.html" class="nav-link">XCP标定</a>
+            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
+        </div>
+
+        <div class="nav-actions">
+            <a href="index.html" class="btn btn-ghost">
+                <span>←</span><span class="text">返回</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <header><h1>🔧 Bootloader OTA 详解</h1></header>
+
+        <div class="card">
+            <h2>OTA 升级流程概览</h2>
+            <div class="flow">
+                <div class="flow-step sec"><div>1.扩展会话</div><small>0x10 03</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step sec"><div>2.安全解锁</div><small>0x27</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step step"><div>3.请求下载</div><small>0x34</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step data"><div>4.传输数据</div><small>0x36 × N</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step step"><div>5.退出传输</div><small>0x37</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step res"><div>6.ECU复位</div><small>0x11</small></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>0x34 请求下载</h2>
+            <div class="code-block">
+<pre><span class="comment">// 请求</span>
+<span class="proto">0x34</span>
+<span class="number">0x00</span>           <span class="comment">// dataFormatIdentifier (0x00=无压缩无加密)</span>
+<span class="comment">                    // bit7-4: 压缩方法, bit3-0: 加密方法</span>
+<span class="number">0x44</span>           <span class="comment">// addressAndLengthFormatIdentifier</span>
+<span class="comment">                    // bit7-4: 地址字节数 (4=32位), bit3-0: 尺寸字节数</span>
+<span class="number">00 00 10 00</span>  <span class="comment">// memoryAddress (起始地址 0x00100000)</span>
+<span class="number">00 00 04 00</span>  <span class="comment">// memorySize (大小 256KB = 0x40000)</span>
+
+<span class="comment">// 响应</span>
+<span class="proto">0x74</span>
+<span class="number">20 00</span>        <span class="comment">// numberOfBlocks (块数量 = 0x2000)</span>
+<span class="number">00 10</span>        <span class="comment">// blockLength (每块4字节granularity×0x40 = 0x1000)</span></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>0x36 数据传输</h2>
+            <div class="code-block">
+<pre><span class="comment">// 请求 (每个数据块)</span>
+<span class="proto">0x36</span>
+<span class="number">0x01</span>           <span class="comment">// blockSequenceCounter (1~numberOfBlocks)</span>
+<span class="number">XX XX XX...</span>  <span class="comment">// transferRequestParameterRecord (数据)</span>
+
+<span class="comment">// 响应</span>
+<span class="proto">0x76</span>
+<span class="number">0x01</span>           <span class="comment">// blockSequenceCounter (回显)</span>
+
+<span class="comment">// 示例: 传输1024字节 (分4块)</span>
+<span class="proto">TX: 36 01</span> <span class="number">00 01 02 03 04 05 06 07...</span>  <span class="comment">// 256B</span>
+<span class="proto">RX: 76 01</span>
+<span class="proto">TX: 36 02</span> <span class="number">08 09 0A 0B 0C 0D 0E 0F...</span>  <span class="comment">// 256B</span>
+<span class="proto">RX: 76 02</span>
+<span class="proto">TX: 36 03</span> <span class="number">10 11 12 13 14 15 16 17...</span>  <span class="comment">// 256B</span>
+<span class="proto">RX: 76 03</span>
+<span class="proto">TX: 36 04</span> <span class="number">18 19 1A 1B 1C 1D 1E 1F...</span>  <span class="comment">// 256B</span>
+<span class="proto">RX: 76 04</span></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>0x37 退出传输</h2>
+            <div class="code-block">
+<pre><span class="comment">// 请求</span>
+<span class="proto">0x37</span>
+<span class="comment">// 可选参数</span>
+
+<span class="comment">// 响应</span>
+<span class="proto">0x77</span>
+<span class="number">00 00</span>  <span class="comment">// transferResponseParameterRecord</span>
+<span class="comment">           // 取决于具体实现，可能是:</span>
+<span class="comment">           // - CRC32校验和</span>
+<span class="comment">           // - 编程结果</span>
+<span class="comment">           // - 应用验证状态</span></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Bootloader 状态机</h2>
+            <div class="state-box">
+                <pre><span class="keyword">enum</span> <span class="type">BootState</span> {
+    APP_RUNNING,       <span class="comment">// 应用运行中</span>
+    BOOT_REQUEST,      <span class="comment">// 收到跳转请求</span>
+    BOOT_ACTIVE,       <span class="comment">// Bootloader激活</span>
+    PROGRAMMING,       <span class="comment">// 编程中</span>
+    VERIFICATION,      <span class="comment">// 验证中</span>
+    APP_VALID,         <span class="comment">// 应用有效</span>
+    APP_INVALID        <span class="comment">// 应用无效</span>
+};
+
+<span class="comment">// 状态转移</span>
+APP_RUNNING ──(0x10 02)──→ BOOT_ACTIVE
+BOOT_ACTIVE ──(0x34)────→ PROGRAMMING
+PROGRAMMING ──(0x37)────→ VERIFICATION
+VERIFICATION ─(成功)────→ APP_VALID
+VERIFICATION ─(失败)────→ BOOT_ACTIVE
+APP_VALID ────(复位)────→ APP_RUNNING</pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>安全机制</h2>
+            <table class="table">
+                <tr><th>安全项</th><th>说明</th><th>实现</th></tr>
+                <tr><td>会话验证</td><td>必须在编程会话</td><td>0x10 0x02</td></tr>
+                <tr><td>安全解锁</td><td>Level 2或更高</td><td>0x27 Seed-Key</td></tr>
+                <tr><td>完整性校验</td><td>CRC32/Checksum</td><td>传输后验证</td></tr>
+                <tr><td>版本检查</td><td>禁止降级</td><td>SW.ver > current</td></tr>
+                <tr><td>指纹记录</td><td>记录编程者</td><td>DID 0xF195</td></tr>
+                <tr><td>加密传输</td><td>防止窃取</td><td>0x34 dataFormat</td></tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>完整CAPL实现</h2>
+            <div class="code-block">
+<pre><span class="comment">// Bootloader OTA 测试脚本</span>
+<span class="keyword">variables</span>
+{
+    <span class="type">int</span> g_currentBlock = <span class="number">0</span>;
+    <span class="type">int</span> g_totalBlocks = <span class="number">0</span>;
+    <span class="type">byte</span> g_blockData[<span class="number">4096</span>];
+}
+
+<span class="comment">// 主流程</span>
+<span class="keyword">on start</span>
+{
+    <span class="function">write</span>(<span class="string">"开始OTA升级..."</span>);
+    
+    <span class="comment">// Step 1: 切换到编程会话</span>
+    <span class="function">sendSessionControl</span>(<span class="number">0x02</span>);
+    <span class="function">testWaitForTimeout</span>(<span class="number">500</span>);
+    
+    <span class="comment">// Step 2: 安全解锁</span>
+    <span class="function">securityAccess</span>(<span class="number">0x03</span>);
+    <span class="function">testWaitForTimeout</span>(<span class="number">500</span>);
+    
+    <span class="comment">// Step 3: 请求下载</span>
+    <span class="type">int</span> blockCount = <span class="function">requestDownload</span>(
+        <span class="number">0x00100000</span>,  <span class="comment">// 地址</span>
+        <span class="number">0x40000</span>     <span class="comment">// 大小</span>
+    );
+    
+    <span class="comment">// Step 4: 传输数据</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">1</span>; i<=blockCount; i++)
+    {
+        <span class="function">prepareBlockData</span>(i, g_blockData);
+        <span class="function">transferData</span>(i, g_blockData);
+        <span class="function">write</span>(<span class="string">"传输块 %d/%d"</span>, i, blockCount);
+    }
+    
+    <span class="comment">// Step 5: 退出传输</span>
+    <span class="function">requestTransferExit</span>();
+    
+    <span class="comment">// Step 6: ECU复位</span>
+    <span class="function">ecuReset</span>(<span class="number">0x01</span>);
+    
+    <span class="function">write</span>(<span class="string">"OTA升级完成!"</span>);
+}
+
+<span class="keyword">testfunction</span> <span class="type">requestDownload</span>(<span class="type">dword</span> addr, <span class="type">dword</span> size)
+{
+    <span class="type">message</span> <span class="number">0x7E0</span> req;
+    req.byte(<span class="number">0</span>) = <span class="number">0x34</span>;
+    req.byte(<span class="number">1</span>) = <span class="number">0x00</span>;  <span class="comment">// 无压缩加密</span>
+    req.byte(<span class="number">2</span>) = <span class="number">0x44</span>;  <span class="comment">// 4字节地址+4字节大小</span>
+    req.byte(<span class="number">3</span>) = (addr >> <span class="number">24</span>) & <span class="number">0xFF</span>;
+    req.byte(<span class="number">4</span>) = (addr >> <span class="number">16</span>) & <span class="number">0xFF</span>;
+    req.byte(<span class="number">5</span>) = (addr >> <span class="number">8</span>) & <span class="number">0xFF</span>;
+    req.byte(<span class="number">6</span>) = addr & <span class="number">0xFF</span>;
+    req.byte(<span class="number">7</span>) = (size >> <span class="number">24</span>) & <span class="number">0xFF</span>;
+    req.byte(<span class="number">8</span>) = (size >> <span class="number">16</span>) & <span class="number">0xFF</span>;
+    req.byte(<span class="number">9</span>) = (size >> <span class="number">8</span>) & <span class="number">0xFF</span>;
+    req.byte(<span class="number">10</span>) = size & <span class="number">0xFF</span>;
+    req.dlc = <span class="number">11</span>;
+    <span class="function">output</span>(req);
+    
+    <span class="comment">// 等待响应</span>
+    <span class="type">message</span> * resp;
+    <span class="function">testWaitForMessage</span>(resp, <span class="number">0x7E8</span>, <span class="number">3000</span>);
+    
+    <span class="keyword">if</span> (resp.byte(<span class="number">0</span>) == <span class="number">0x74</span>)
+    {
+        <span class="type">int</span> blockLen = (resp.byte(<span class="number">3</span>) << <span class="number">8</span>) | resp.byte(<span class="number">4</span>);
+        <span class="keyword">return</span> size / blockLen;
+    }
+    <span class="keyword">return</span> <span class="number">0</span>;
+}</pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

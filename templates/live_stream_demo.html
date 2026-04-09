@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stream Detection</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --border: #333;
+            --text: #fff;
+            --text-muted: #888;
+            --primary: #00d4ff;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff4444;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--card);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 { font-size: 24px; color: var(--primary); }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: 20px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+        
+        .status-dot.active { background: var(--success); }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        select, input, button {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 14px;
+        }
+        
+        select { min-width: 120px; }
+        input { min-width: 200px; }
+        
+        button {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        button.stop { background: var(--danger); color: #fff; }
+        
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        
+        /* Video Area */
+        .video-card {
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .video-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .video-area {
+            position: relative;
+            background: #000;
+            min-height: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #video-stream {
+            max-width: 100%;
+            max-height: 480px;
+        }
+        
+        .video-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+        }
+        
+        .video-placeholder .icon { font-size: 64px; margin-bottom: 12px; }
+        
+        /* Stats */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+        
+        .stat-item {
+            background: var(--card);
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        /* Sidebar */
+        .sidebar { display: flex; flex-direction: column; gap: 16px; }
+        
+        .panel {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        
+        /* Stream List */
+        .stream-list { display: flex; flex-direction: column; gap: 8px; }
+        
+        .stream-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .stream-item:hover { background: #252525; }
+        .stream-item.active { border: 1px solid var(--primary); }
+        
+        .stream-info { display: flex; align-items: center; gap: 8px; }
+        
+        .stream-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+        
+        .stream-dot.running { background: var(--success); }
+        
+        /* Alerts */
+        .alert-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--warning);
+        }
+        
+        .alert-item.danger { border-left-color: var(--danger); }
+        
+        .alert-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        /* Logs */
+        .log-area {
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .log-entry { margin-bottom: 4px; }
+        .log-entry.error { color: var(--danger); }
+        .log-entry.success { color: var(--success); }
+        .log-entry.info { color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Live Stream Detection</h1>
+            <div class="status-badge">
+                <div class="status-dot" id="sse-dot"></div>
+                <span id="sse-status">Disconnected</span>
+            </div>
+        </header>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <select id="stream-type">
+                <option value="camera">Camera (0)</option>
+                <option value="rtsp">RTSP</option>
+                <option value="http">HTTP Stream</option>
+            </select>
+            <input type="text" id="stream-source" placeholder="Source URL or 0">
+            <button id="btn-add">Add Stream</button>
+            <button id="btn-start" disabled>Start</button>
+            <button id="btn-stop" class="stop" disabled>Stop</button>
+            <button id="btn-screenshot">Screenshot</button>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- Video -->
+            <div class="video-card">
+                <div class="video-header">
+                    <span id="current-stream">No stream selected</span>
+                    <span id="stream-fps">0 FPS</span>
+                </div>
+                
+                <div class="video-area">
+                    <img id="video-stream" style="display: none;">
+                    <div class="video-placeholder" id="placeholder">
+                        <div class="icon">&#9654;</div>
+                        <div>No active stream</div>
+                    </div>
+                </div>
+                
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-fps">0</div>
+                        <div class="stat-label">FPS</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-latency">0</div>
+                        <div class="stat-label">Latency (ms)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-frames">0</div>
+                        <div class="stat-label">Frames</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-detections">0</div>
+                        <div class="stat-label">Detections</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Streams -->
+                <div class="panel">
+                    <div class="panel-title">Streams</div>
+                    <div class="stream-list" id="stream-list"></div>
+                </div>
+                
+                <!-- Alerts -->
+                <div class="panel">
+                    <div class="panel-title">Alerts</div>
+                    <div class="alert-list" id="alert-list">
+                        <div style="color: var(--text-muted); text-align: center; padding: 20px;">
+                            No alerts
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Logs -->
+                <div class="panel">
+                    <div class="panel-title">Logs</div>
+                    <div class="log-area" id="log-area"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Config
+        const API_BASE = 'http://localhost:8000';
+        let eventSource = null;
+        let currentStreamId = null;
+        let frameUpdateInterval = null;
+        let statsInterval = null;
+        
+        // SSE Connection
+        function connectSSE() {
+            if (eventSource) eventSource.close();
+            
+            eventSource = new EventSource(`${API_BASE}/sse/streams`);
+            
+            eventSource.onopen = () => {
+                updateSSEStatus(true);
+                log('SSE connected', 'success');
+            };
+            
+            eventSource.addEventListener('connected', (e) => {
+                log(`Connected to channel: ${JSON.parse(e.data).channel}`);
+            });
+            
+            eventSource.addEventListener('detection', (e) => {
+                const data = JSON.parse(e.data);
+                handleDetection(data);
+            });
+            
+            eventSource.addEventListener('stream_status', (e) => {
+                const data = JSON.parse(e.data);
+                handleStreamStatus(data);
+            });
+            
+            eventSource.addEventListener('heartbeat', () => {
+                // Keep alive
+            });
+            
+            eventSource.onerror = () => {
+                updateSSEStatus(false);
+                log('SSE disconnected, reconnecting...', 'error');
+                setTimeout(connectSSE, 3000);
+            };
+        }
+        
+        function updateSSEStatus(connected) {
+            const dot = document.getElementById('sse-dot');
+            const text = document.getElementById('sse-status');
+            
+            if (connected) {
+                dot.classList.add('active');
+                text.textContent = 'Connected';
+            } else {
+                dot.classList.remove('active');
+                text.textContent = 'Disconnected';
+            }
+        }
+        
+        // Stream Management
+        async function addStream() {
+            const type = document.getElementById('stream-type').value;
+            const source = document.getElementById('stream-source').value || '0';
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/streams`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stream_type: type,
+                        source: source === '' ? '0' : source
+                    })
+                });
+                
+                const data = await res.json();
+                log(`Stream added: ${data.stream_id}`, 'success');
+                await loadStreams();
+                
+                // Auto select
+                selectStream(data.stream_id);
+                
+            } catch (err) {
+                log(`Add stream failed: ${err.message}`, 'error');
+            }
+        }
+        
+        async function loadStreams() {
+            try {
+                const res = await fetch(`${API_BASE}/api/streams`);
+                const data = await res.json();
+                
+                const list = document.getElementById('stream-list');
+                list.innerHTML = '';
+                
+                data.streams.forEach(stream => {
+                    const item = document.createElement('div');
+                    item.className = `stream-item ${stream.stream_id === currentStreamId ? 'active' : ''}`;
+                    item.onclick = () => selectStream(stream.stream_id);
+                    
+                    item.innerHTML = `
+                        <div class="stream-info">
+                            <div class="stream-dot ${stream.status === 'running' ? 'running' : ''}"></div>
+                            <span>${stream.type} - ${stream.source}</span>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-muted)">${stream.status}</span>
+                    `;
+                    
+                    list.appendChild(item);
+                });
+                
+            } catch (err) {
+                log(`Load streams failed: ${err.message}`, 'error');
+            }
+        }
+        
+        async function selectStream(streamId) {
+            currentStreamId = streamId;
+            
+            document.getElementById('btn-start').disabled = false;
+            
+            // Update UI
+            document.querySelectorAll('.stream-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            await loadStreams();
+        }
+        
+        async function startStream() {
+            if (!currentStreamId) return;
+            
+            try {
+                await fetch(`${API_BASE}/api/streams/${currentStreamId}/start`, {
+                    method: 'POST'
+                });
+                
+                log(`Stream ${currentStreamId} started`, 'success');
+                
+                document.getElementById('btn-start').disabled = true;
+                document.getElementById('btn-stop').disabled = false;
+                
+                // Start frame update
+                startFrameUpdate();
+                await loadStreams();
+                
+            } catch (err) {
+                log(`Start failed: ${err.message}`, 'error');
+            }
+        }
+        
+        async function stopStream() {
+            if (!currentStreamId) return;
+            
+            try {
+                await fetch(`${API_BASE}/api/streams/${currentStreamId}/stop`, {
+                    method: 'POST'
+                });
+                
+                log(`Stream ${currentStreamId} stopped`, 'info');
+                
+                document.getElementById('btn-start').disabled = false;
+                document.getElementById('btn-stop').disabled = true;
+                
+                stopFrameUpdate();
+                await loadStreams();
+                
+            } catch (err) {
+                log(`Stop failed: ${err.message}`, 'error');
+            }
+        }
+        
+        function startFrameUpdate() {
+            // Update frame every 100ms
+            frameUpdateInterval = setInterval(async () => {
+                if (!currentStreamId) return;
+                
+                try {
+                    const res = await fetch(`${API_BASE}/api/streams/${currentStreamId}/frame`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        
+                        const img = document.getElementById('video-stream');
+                        img.src = data.image;
+                        img.style.display = 'block';
+                        document.getElementById('placeholder').style.display = 'none';
+                    }
+                } catch (err) {
+                    // Ignore
+                }
+            }, 100);
+        }
+        
+        function stopFrameUpdate() {
+            if (frameUpdateInterval) {
+                clearInterval(frameUpdateInterval);
+                frameUpdateInterval = null;
+            }
+            
+            document.getElementById('video-stream').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'flex';
+        }
+        
+        // Handle SSE events
+        function handleDetection(data) {
+            // Update stats
+            document.getElementById('stat-frames').textContent = data.frame_id || 0;
+            document.getElementById('stat-latency').textContent = data.latency_ms || 0;
+            document.getElementById('stat-fps').textContent = Math.round(data.fps || 0);
+            document.getElementById('stream-fps').textContent = `${Math.round(data.fps || 0)} FPS`;
+            
+            const detCount = document.getElementById('stat-detections');
+            const current = parseInt(detCount.textContent) || 0;
+            detCount.textContent = current + data.count;
+            
+            // Show alerts for detections
+            if (data.count > 0) {
+                addAlert(`Detected ${data.count} object(s)`, data.count > 0 ? 'danger' : 'warning');
+            }
+        }
+        
+        function handleStreamStatus(data) {
+            log(`Stream ${data.stream_id} is now ${data.status}`, 'info');
+            loadStreams();
+        }
+        
+        function addAlert(message, type = 'warning') {
+            const list = document.getElementById('alert-list');
+            
+            // Clear placeholder if exists
+            if (list.querySelector('div[style]')) {
+                list.innerHTML = '';
+            }
+            
+            const alert = document.createElement('div');
+            alert.className = `alert-item ${type}`;
+            alert.innerHTML = `
+                <div>${message}</div>
+                <div class="alert-time">${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            list.insertBefore(alert, list.firstChild);
+            
+            // Keep only last 10
+            while (list.children.length > 10) {
+                list.removeChild(list.lastChild);
+            }
+        }
+        
+        // Screenshot
+        function takeScreenshot() {
+            const img = document.getElementById('video-stream');
+            if (img.style.display === 'none') {
+                log('No active stream to capture', 'error');
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = `capture_${Date.now()}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg');
+            link.click();
+            
+            log('Screenshot saved', 'success');
+        }
+        
+        // Log
+        function log(message, type = 'info') {
+            const area = document.getElementById('log-area');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            area.appendChild(entry);
+            area.scrollTop = area.scrollHeight;
+        }
+        
+        // Event Listeners
+        document.getElementById('btn-add').onclick = addStream;
+        document.getElementById('btn-start').onclick = startStream;
+        document.getElementById('btn-stop').onclick = stopStream;
+        document.getElementById('btn-screenshot').onclick = takeScreenshot;
+        
+        // Init
+        connectSSE();
+        loadStreams();
+        log('Client initialized');
+    </script>
+</body>
+</html>

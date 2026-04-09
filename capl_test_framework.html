@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPL 测试框架详解 | AutoTest Academy</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #238636;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #238636, #2ea043);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .subtitle { color: #8b949e; font-size: 1.1em; }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card h2 {
+            color: #238636;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .code-block {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+        }
+        .keyword { color: #ff7b72; }
+        .function { color: #d2a8ff; }
+        .comment { color: #6a737d; font-style: italic; }
+        .number { color: #79c0ff; }
+        .string { color: #a5d6ff; }
+        .type { color: #ffa657; }
+        pre { margin: 0; white-space: pre-wrap; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .badge-basic { background: #238636; }
+        .badge-advanced { background: #da3633; }
+        .badge-framework { background: #6e40c9; }
+        
+        .flow-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 30px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+            border-radius: 10px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .flow-step.alt { background: linear-gradient(135deg, #6e40c9 0%, #8957e5 100%); }
+        .flow-arrow { color: #58a6ff; font-size: 1.5em; }
+        
+        .test-console {
+            background: #000;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Consolas', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .console-line { margin: 5px 0; padding: 5px 10px; border-radius: 5px; }
+        .console-line.info { background: rgba(88,166,255,0.1); color: #58a6ff; }
+        .console-line.pass { background: rgba(35,134,54,0.2); color: #238636; }
+        .console-line.fail { background: rgba(248,81,73,0.2); color: #f85149; }
+        .console-line.header { background: #238636; color: #fff; font-weight: bold; text-align: center; }
+        
+        .feature-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin: 20px 0; }
+        .feature-item {
+            background: rgba(110,64,201,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #6e40c9;
+        }
+        .feature-item h4 { color: #8957e5; margin-bottom: 10px; }
+        .feature-item p { color: #8b949e; font-size: 0.9em; }
+        
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px 10px 0 0;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-tab.active { background: #0d1117; color: #238636; border-bottom: 2px solid #238636; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn-run { background: linear-gradient(135deg, #238636, #2ea043); color: #fff; }
+        .btn-run:hover { box-shadow: 0 5px 20px rgba(35,134,54,0.4); }
+        .btn-reset { background: linear-gradient(135deg, #da3633, #f85149); color: #fff; }
+        
+        .progress-bar {
+            height: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #238636, #2ea043);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.3s;
+            font-weight: bold;
+        }
+        
+        .test-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        .result-item { padding: 20px; border-radius: 10px; text-align: center; }
+        .result-item.passed { background: rgba(35,134,54,0.2); border: 1px solid #238636; }
+        .result-item.failed { background: rgba(248,81,73,0.2); border: 1px solid #f85149; }
+        .result-item.total { background: rgba(88,166,255,0.2); border: 1px solid #58a6ff; }
+        .result-item .number { font-size: 2em; display: block; }
+    </style>
+</head>
+<body>
+    <!-- 统一导航栏 -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="logo-icon">🚗</div>
+            <span>AutoTest <span style="color: var(--primary)">Academy</span></span>
+        </a>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
+            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_test_framework.html" class="nav-link active">测试框架</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
+            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
+            <a href="xcp_safety.html" class="nav-link">XCP标定</a>
+            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
+        </div>
+
+        <div class="nav-actions">
+            <a href="index.html" class="btn btn-ghost">
+                <span>←</span><span class="text">返回</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <header>
+            <h1>🧪 CAPL 测试框架详解</h1>
+            <p class="subtitle">Test Module · Testcase · Test Unit · vTESTstudio</p>
+        </header>
+
+        <!-- 测试框架架构 -->
+        <div class="card">
+            <h2>📐 测试框架架构</h2>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div>📋 测试设计</div>
+                    <small>vTESTstudio</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step alt">
+                    <div>⚙️ 测试执行</div>
+                    <small>CANoe/CAPL</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div>📊 结果分析</div>
+                    <small>HTML/XML</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step alt">
+                    <div>🔄 CI/CD</div>
+                    <small>Jenkins</small>
+                </div>
+            </div>
+            
+            <div class="feature-list">
+                <div class="feature-item">
+                    <h4>📝 Test Module</h4>
+                    <p>CANoe内置测试框架，编写testcase函数，自动执行测试序列</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🔧 Test Unit</h4>
+                    <p>独立测试节点，可在多个测试环境中复用</p>
+                </div>
+                <div class="feature-item">
+                    <h4>📁 vTESTstudio</h4>
+                    <p>可视化测试设计工具，支持状态图、序列图</p>
+                </div>
+                <div class="feature-item">
+                    <h4>📈 报告生成</h4>
+                    <p>自动生成HTML/XML测试报告</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- testcase 用法 -->
+        <div class="card">
+            <h2>📝 testcase 基本用法 <span class="badge badge-basic">基础</span></h2>
+            <div class="code-block">
+<pre><span class="comment">// ==================== testcase 定义 ====================</span>
+
+<span class="comment">// 最简单的测试用例</span>
+<span class="function">testcase</span> TC_Basic()
+{
+    <span class="function">testStep</span>(<span class="string">"Step 1"</span>, <span class="string">"发送唤醒报文"</span>);
+    <span class="type">message</span> <span class="number">0x01</span> wakeup;
+    <span class="function">output</span>(wakeup);
+    
+    <span class="comment">// 等待响应，超时1000ms</span>
+    <span class="type">message</span> * resp;
+    <span class="type">int</span> result = <span class="function">testWaitForMessage</span>(resp, <span class="number">0x100</span>, <span class="number">1000</span>);
+    
+    <span class="comment">// 断言检查</span>
+    <span class="keyword">if</span> (result == <span class="number">1</span>)
+    {
+        <span class="function">testStepPass</span>(<span class="string">"收到ECU响应"</span>);
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="function">testStepFail</span>(<span class="string">"ECU无响应"</span>);
+    }
+}
+
+<span class="comment">// ==================== 带参数的测试用例 ====================</span>
+
+<span class="function">testcase</span> TC_WithParameters(<span class="type">int</span> speed, <span class="type">int</span> timeout)
+{
+    <span class="type">message</span> <span class="number">0x200</span> cmd;
+    cmd.Speed = speed;
+    <span class="function">output</span>(cmd);
+    
+    <span class="function">testWaitForTimeout</span>(timeout);
+    <span class="function">testCheck</span>(g_actualSpeed == speed, <span class="string">"速度验证"</span>);
+}</pre>
+            </div>
+        </div>
+
+        <!-- 断言函数 -->
+        <div class="card">
+            <h2>✅ 断言与检查函数 <span class="badge badge-basic">基础</span></h2>
+            <div class="code-block">
+<pre><span class="comment">// ==================== 常用断言函数 ====================</span>
+
+<span class="comment">// 通用检查</span>
+<span class="function">testCheck</span>(condition, description);
+<span class="comment">// 示例</span>
+<span class="function">testCheck</span>(speed > <span class="number">0</span>, <span class="string">"速度应为正数"</span>);
+
+<span class="comment">// 数值范围检查</span>
+<span class="function">testCheckOrWarn</span>(rpm >= <span class="number">800</span> && rpm <= <span class="number">7000</span>, <span class="string">"转速范围检查"</span>);
+
+<span class="comment">// 精确相等 (带容差)</span>
+<span class="function">testCheckEqual</span>(actual, expected, tolerance, description);
+<span class="comment">// 示例：允许±5的误差</span>
+<span class="function">testCheckEqual</span>(actualTemp, <span class="number">25.0</span>, <span class="number">5.0</span>, <span class="string">"温度检查"</span>);
+
+<span class="comment">// 信号值检查</span>
+<span class="function">testAddSignalCheck</span>(signalName, min, max);
+<span class="function">testAddSignalCheck</span>(<span class="string">"EngineSpeed"</span>, <span class="number">0</span>, <span class="number">8000</span>);
+
+<span class="comment">// ==================== 等待与超时 ====================</span>
+
+<span class="comment">// 等待指定报文</span>
+<span class="type">message</span> * rxMsg;
+<span class="type">int</span> ret = <span class="function">testWaitForMessage</span>(rxMsg, <span class="number">0x100</span>, <span class="number">1000</span>);
+<span class="comment">// 返回值: 1=收到, 0=超时</span>
+
+<span class="comment">// 等待条件满足</span>
+<span class="type">int</span> ret = <span class="function">testWaitForCondition</span>(speed > <span class="number">100</span>, <span class="number">5000</span>);
+
+<span class="comment">// 等待信号值</span>
+<span class="function">testWaitForSignal</span>(<span class="string">"EngineSpeed"</span>, <span class="number">5000</span>, <span class="number">500</span>, <span class="number">50</span>);</pre>
+            </div>
+        </div>
+
+        <!-- 测试序列器 -->
+        <div class="card">
+            <h2>🔗 测试序列器 (Sequencer) <span class="badge badge-advanced">进阶</span></h2>
+            <div class="code-block">
+<pre><span class="comment">// ==================== 测试序列 ====================</span>
+
+<span class="comment">// 定义测试序列</span>
+<span class="function">testsequence</span> TS_ECU_WakeUp()
+{
+    <span class="function">call</span>(TS_Reset);
+    <span class="function">call</span>(TC_SendWakeUp);
+    <span class="function">wait</span>(<span class="number">100</span>);
+    <span class="function">call</span>(TC_VerifyWakeUp);
+}
+
+<span class="function">testsequence</span> TS_DiagnosticSession()
+{
+    <span class="function">call</span>(TC_StartDiagnostic);
+    <span class="function">call</span>(TC_SwitchSession_Normal);
+    <span class="function">call</span>(TC_ReadDTC);
+    <span class="function">call</span>(TC_ClearDTC);
+}
+
+<span class="comment">// ==================== 数据驱动测试 ====================</span>
+
+<span class="keyword">struct</span> <span class="type">SpeedTestData</span>
+{
+    <span class="type">byte</span> gear;
+    <span class="type">int</span> targetSpeed;
+    <span class="type">int</span> maxTime;
+};
+
+<span class="type">const</span> <span class="type">SpeedTestData</span> speedTable[] = {
+    {<span class="number">1</span>, <span class="number">30</span>,  <span class="number">2000</span>},
+    {<span class="number">2</span>, <span class="number">60</span>,  <span class="number">3000</span>},
+    {<span class="number">3</span>, <span class="number">100</span>, <span class="number">4000</span>}
+};
+
+<span class="function">testcase</span> TC_SpeedTableDriven()
+{
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i < <span class="number">elcount</span>(speedTable); i++)
+    {
+        <span class="function">testStep</span>(<span class="string">"档位 %d"</span>, speedTable[i].gear);
+        <span class="type">int</span> elapsed = <span class="function">measureResponseTime</span>(
+            speedTable[i].gear, speedTable[i].targetSpeed
+        );
+        <span class="function">testCheck</span>(elapsed < speedTable[i].maxTime, <span class="string">"响应时间"</span>);
+    }
+}</pre>
+            </div>
+        </div>
+
+        <!-- Test Unit -->
+        <div class="card">
+            <h2>📦 Test Unit 模块化测试 <span class="badge badge-framework">框架</span></h2>
+            <div class="code-block">
+<pre><span class="comment">// ==================== TestUnit.can ====================</span>
+
+<span class="function">testunit</span> <span class="string">"DiagnosticUnit"</span>
+
+<span class="comment">// 对外暴露的测试函数</span>
+<span class="function">testfunction</span> <span class="type">Diag_ReadDTC</span>(<span class="type">int</span> dtcMask)
+{
+    diagRequest UDS.ReadDTCByStatus_req req;
+    req.GetMultiByteValue(<span class="number">0xDTCStatusMask</span>, dtcMask);
+    req.send();
+}
+
+<span class="function">testfunction</span> <span class="type">Diag_SwitchSession</span>(<span class="type">byte</span> sessionType)
+{
+    diagRequest UDS.SessionControl_req req;
+    req.GetMultiByteValue(<span class="number">0xSF</span>, sessionType);
+    req.send();
+}
+
+<span class="comment">// ==================== 主测试文件调用 ====================</span>
+
+<span class="keyword">includes</span>
+{
+    <span class="comment">#include "DiagnosticUnit.can"</span>
+}
+
+<span class="function">testcase</span> TC_DiagnosticFlow()
+{
+    <span class="function">Diag_SwitchSession</span>(<span class="number">0x03</span>);
+    <span class="function">Diag_ReadDTC</span>(<span class="number">0xFF</span>);
+}</pre>
+            </div>
+        </div>
+
+        <!-- vTESTstudio -->
+        <div class="card">
+            <h2>🎯 vTESTstudio <span class="badge badge-framework">框架</span></h2>
+            <div class="code-block">
+<pre><span class="comment">// ==================== vTESTstudio 支持的测试类型 ====================</span>
+
+<span class="comment">// 1. 序列图测试 (Sequence Diagrams)</span>
+<span class="comment">// 图形化定义测试流程</span>
+
+<span class="comment">// 2. 状态图测试 (State Machines)</span>
+<span class="comment">// 使用状态机定义复杂测试逻辑</span>
+
+<span class="comment">// 3. CAPL 测试模块</span>
+<span class="comment">// 纯CAPL编写测试逻辑</span>
+
+<span class="comment">// 4. 测试数据管理</span>
+<span class="comment">// 支持Excel, CSV, Database导入</span>
+
+<span class="comment">// ==================== CI/CD 集成 ====================</span>
+
+<span class="comment">// 命令行执行</span>
+<span class="comment">// CANoe -batchmode -measurement "test.cfg" -testmodule "TestModule"</span>
+
+<span class="keyword">on stopMeasurement</span>
+{
+    <span class="type">int</span> failCount = <span class="function">testGetFailCount</span>();
+    <span class="keyword">if</span> (failCount > <span class="number">0</span>) <span class="function">exit</span>(<span class="number">1</span>);
+}</pre>
+            </div>
+        </div>
+
+        <!-- 交互演示 -->
+        <div class="card">
+            <h2>🧪 交互式测试演示</h2>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button class="btn btn-run" onclick="runTests()">▶️ 运行测试</button>
+                <button class="btn btn-reset" onclick="resetTests()">🔄 重置</button>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+            </div>
+
+            <div class="test-console" id="testConsole">
+                <div class="console-line header">CANoe Test Console - 点击"运行测试"开始</div>
+            </div>
+
+            <div class="test-result">
+                <div class="result-item total">
+                    <span class="number" id="totalCount">0</span>
+                    <div>总测试数</div>
+                </div>
+                <div class="result-item passed">
+                    <span class="number" id="passCount">0</span>
+                    <div>通过</div>
+                </div>
+                <div class="result-item failed">
+                    <span class="number" id="failCount">0</span>
+                    <div>失败</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 常用测试用例 -->
+        <div class="card">
+            <h2>📋 常用测试用例模板</h2>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <h4>🔌 通信测试</h4>
+                    <p>TC_WakeUp, TC_Sleep, TC_Heartbeat</p>
+                </div>
+                <div class="feature-item">
+                    <h4>⚡ 信号测试</h4>
+                    <p>TC_SignalRange, TC_SignalTiming</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🔧 诊断测试</h4>
+                    <p>TC_Diag_Session, TC_ReadDTC, TC_ClearDTC</p>
+                </div>
+                <div class="feature-item">
+                    <h4>⚠️ 故障注入</h4>
+                    <p>TC_BusOff, TC_Timeout, TC_InvalidFrame</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🔄 压力测试</h4>
+                    <p>TC_LoadTest, TC_Endurance, TC_Burst</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🛡️ 安全测试</h4>
+                    <p>TC_Auth, TC_SeedKey, TC_AccessTiming</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let isRunning = false;
+
+        const testCases = [
+            { name: 'TC_WakeUp', desc: 'ECU唤醒测试', duration: 800 },
+            { name: 'TC_Session', desc: '诊断会话切换', duration: 600 },
+            { name: 'TC_ReadDTC', desc: '读取故障码', duration: 500 },
+            { name: 'TC_SpeedSignal', desc: '速度信号验证', duration: 700 },
+            { name: 'TC_BusLoad', desc: '总线负载测试', duration: 1000 },
+            { name: 'TC_Timeout', desc: '超时响应测试', duration: 400 },
+        ];
+
+        function addLog(type, message) {
+            const console = document.getElementById('testConsole');
+            const line = document.createElement('div');
+            line.className = 'console-line ' + type;
+            const time = new Date().toLocaleTimeString('en-GB');
+            line.textContent = `[${time}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').textContent = testResults.length;
+            document.getElementById('passCount').textContent = testResults.filter(r => r.pass).length;
+            document.getElementById('failCount').textContent = testResults.filter(r => !r.pass).length;
+            const progress = (testResults.length / testCases.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressBar').textContent = Math.round(progress) + '%';
+        }
+
+        async function runTests() {
+            if (isRunning) return;
+            isRunning = true;
+            testResults = [];
+            
+            addLog('info', '========================================');
+            addLog('info', '开始执行测试套件...');
+
+            for (let i = 0; i < testCases.length; i++) {
+                const tc = testCases[i];
+                addLog('info', `执行: ${tc.name} - ${tc.desc}`);
+                await new Promise(resolve => setTimeout(resolve, tc.duration / 2));
+                const passed = Math.random() > 0.1;
+                testResults.push({ name: tc.name, pass: passed });
+                if (passed) {
+                    addLog('pass', `✓ ${tc.name} PASSED`);
+                } else {
+                    addLog('fail', `✗ ${tc.name} FAILED - 响应超时`);
+                }
+                updateStats();
+                await new Promise(resolve => setTimeout(resolve, tc.duration / 2));
+            }
+
+            const passCount = testResults.filter(r => r.pass).length;
+            const failCount = testResults.filter(r => !r.pass).length;
+            addLog('info', '========================================');
+            addLog(passCount > 0 ? 'pass' : 'fail', `测试完成: ${passCount} 通过, ${failCount} 失败`);
+            isRunning = false;
+        }
+
+        function resetTests() {
+            testResults = [];
+            document.getElementById('testConsole').innerHTML = '<div class="console-line header">CANoe Test Console</div>';
+            updateStats();
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').textContent = '0%';
+        }
+    </script>
+</body>
+</html>
