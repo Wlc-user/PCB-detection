@@ -1,0 +1,12 @@
+names:
+- missing_hole
+- mouse_bite
+- open_circuit
+- short
+- spur
+- spurious_copper
+nc: 6
+path: E:\pyspace\opencv\yolo_pcb_dataset
+test: images/test
+train: images/train
+val: images/val

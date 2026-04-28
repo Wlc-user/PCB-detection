@@ -1,0 +1,2 @@
+E:\pyspace\opencv\PortComm\obj\Release\PortComm.csproj.AssemblyReference.cache
+E:\pyspace\opencv\PortComm\obj\Release\PortComm.csproj.CoreCompileInputs.cache

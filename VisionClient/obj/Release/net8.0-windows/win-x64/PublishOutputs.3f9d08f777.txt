@@ -1,0 +1,14 @@
+e:\pyspace\opencv\VisionClient\publish\VisionClient.exe
+e:\pyspace\opencv\VisionClient\publish\App.config
+e:\pyspace\opencv\VisionClient\publish\VisionClient.dll
+e:\pyspace\opencv\VisionClient\publish\VisionClient.runtimeconfig.json
+e:\pyspace\opencv\VisionClient\publish\VisionClient.dll.config
+e:\pyspace\opencv\VisionClient\publish\VisionClient.pdb
+e:\pyspace\opencv\VisionClient\publish\CommunityToolkit.Mvvm.dll
+e:\pyspace\opencv\VisionClient\publish\Google.Protobuf.dll
+e:\pyspace\opencv\VisionClient\publish\Grpc.Core.Api.dll
+e:\pyspace\opencv\VisionClient\publish\Grpc.Net.Client.dll
+e:\pyspace\opencv\VisionClient\publish\Grpc.Net.Client.Web.dll
+e:\pyspace\opencv\VisionClient\publish\Grpc.Net.Common.dll
+e:\pyspace\opencv\VisionClient\publish\Microsoft.Extensions.Logging.Abstractions.dll
+e:\pyspace\opencv\VisionClient\publish\VisionClient.deps.json

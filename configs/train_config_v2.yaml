@@ -1,0 +1,60 @@
+anchor:
+  anchor_per_grid: 3
+  use_dfl: true
+augmentation:
+  copy_paste: 0.1
+  degrees: 15.0
+  fliplr: 0.5
+  flipud: 0.0
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  mixup: 0.15
+  mosaic: 1.0
+  perspective: 0.001
+  scale: 0.5
+  shear: 0.0
+  translate: 0.1
+data:
+  dataset_path: yolo_pcb_dataset
+  yaml_path: models/yolov8/data.yaml
+export:
+  format: onnx
+  half: true
+  opset: 12
+  simplify: true
+inference:
+  agnostic_nms: false
+  conf: 0.3
+  device: 0
+  imgsz: 1280
+  iou: 0.5
+  max_det: 300
+  retina_masks: false
+model:
+  imgsz: 1280
+  name: yolov8s
+  pretrained: true
+optimizer:
+  lr0: 0.0001
+  lrf: 0.001
+  momentum: 0.937
+  name: AdamW
+  warmup_bias_lr: 0.1
+  warmup_epochs: 3
+  warmup_momentum: 0.8
+  weight_decay: 0.0005
+roi:
+  enabled: true
+  min_area: 0.001
+  pcb_margin: 0.02
+train:
+  batch: 8
+  box: 7.5
+  cls: 0.5
+  device: 0
+  dfl: 1.5
+  epochs: 100
+  imgsz: 1280
+  patience: 30
+  save_period: 10

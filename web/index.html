@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据标注平台 - 万张数据集级</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+        
+        .header { background: #1a73e8; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; }
+        .header .user { display: flex; gap: 15px; align-items: center; }
+        
+        .container { display: flex; height: calc(100vh - 60px); }
+        
+        .sidebar { width: 250px; background: white; border-right: 1px solid #ddd; overflow-y: auto; }
+        .sidebar-section { padding: 15px; border-bottom: 1px solid #eee; }
+        .sidebar h3 { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 10px; }
+        .sidebar-item { padding: 10px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; transition: background 0.2s; }
+        .sidebar-item:hover { background: #f0f0f0; }
+        .sidebar-item.active { background: #e8f0fe; color: #1a73e8; }
+        
+        .main { flex: 1; display: flex; flex-direction: column; }
+        
+        .toolbar { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center; }
+        .toolbar button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .tool-btn { background: #f0f0f0; color: #333; }
+        .tool-btn:hover { background: #e0e0e0; }
+        .tool-btn.active { background: #1a73e8; color: white; }
+        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary:hover { background: #1557b0; }
+        
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+        
+        .canvas-area { flex: 1; background: #333; display: flex; align-items: center; justify-content: center; position: relative; overflow: auto; }
+        .canvas-area img { max-width: 100%; max-height: 100%; cursor: crosshair; }
+        
+        .bbox { position: absolute; border: 2px solid; pointer-events: none; }
+        .bbox-label { position: absolute; top: -20px; left: 0; padding: 2px 6px; font-size: 11px; color: white; border-radius: 3px; white-space: nowrap; }
+        
+        .panel-right { width: 300px; background: white; border-left: 1px solid #ddd; overflow-y: auto; }
+        .panel-section { padding: 15px; border-bottom: 1px solid #eee; }
+        .panel-section h4 { font-size: 13px; color: #333; margin-bottom: 10px; }
+        
+        .category-item { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; border-radius: 4px; }
+        .category-item:hover { background: #f5f5f5; }
+        .category-item.active { background: #e8f0fe; }
+        .category-color { width: 16px; height: 16px; border-radius: 3px; }
+        .category-name { flex: 1; }
+        .category-shortcut { font-size: 11px; color: #999; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-card { background: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #1a73e8; }
+        .stat-label { font-size: 12px; color: #666; }
+        
+        .progress-bar { height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: #1a73e8; transition: width 0.3s; }
+        
+        .image-list { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: #f9f9f9; }
+        .thumbnail { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+        .thumbnail:hover { border-color: #1a73e8; }
+        .thumbnail.active { border-color: #1a73e8; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; }
+        .modal h2 { margin-bottom: 20px; }
+        .modal input, .modal select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        
+        .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; width: 350px; text-align: center; }
+        .login-box h1 { margin-bottom: 30px; color: #333; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .login-box button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .login-box button:hover { background: #1557b0; }
+        
+        .empty-state { text-align: center; padding: 60px; color: #666; }
+        .empty-state h3 { margin-bottom: 10px; }
+        
+        .shortcut-hint { position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-size: 12px; }
+        .shortcut-hint kbd { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; margin: 0 3px; }
+    </style>
+</head>
+<body>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h1>标注平台</h1>
+            <input type="text" id="username" placeholder="用户名" value="admin">
+            <input type="password" id="password" placeholder="密码" value="admin123">
+            <button onclick="login()">登录</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>数据标注平台</h1>
+        <div class="user">
+            <span id="userInfo">管理员</span>
+            <button class="tool-btn" onclick="showModal('settingsModal')">设置</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>项目</h3>
+                <div id="projectList"></div>
+                <button class="tool-btn" style="width:100%; margin-top:10px" onclick="showModal('newProjectModal')">+ 新建项目</button>
+            </div>
+            <div class="sidebar-section">
+                <h3>任务</h3>
+                <div id="taskList"></div>
+                <button class="tool-btn" style="width:100%; margin-top:10px" onclick="showModal('newTaskModal')">+ 新建任务</button>
+            </div>
+            <div class="sidebar-section">
+                <h3>统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statImages">0</div>
+                        <div class="stat-label">图像</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statAnnotations">0</div>
+                        <div class="stat-label">标注</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div style="font-size:11px;color:#666;margin-top:5px" id="progressText">0% 完成</div>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="toolbar">
+                <button class="tool-btn active" id="bboxTool" onclick="setTool('bbox')">框</button>
+                <button class="tool-btn" id="polyTool" onclick="setTool('polygon')">多边形</button>
+                <button class="tool-btn" id="keypointTool" onclick="setTool('keypoint')">关键点</button>
+                <div style="flex:1"></div>
+                <button class="tool-btn" onclick="prevImage()">上一张</button>
+                <span id="imageCounter">0/0</span>
+                <button class="tool-btn" onclick="nextImage()">下一张</button>
+                <div style="width:1px;height:20px;background:#ddd;margin:0 10px"></div>
+                <button class="btn-primary" onclick="saveAnnotation()">保存</button>
+                <button class="tool-btn" onclick="showModal('importModal')">导入</button>
+                <button class="tool-btn" onclick="exportDataset()">导出</button>
+            </div>
+
+            <div class="image-list" id="imageList"></div>
+
+            <div class="workspace" id="workspace">
+                <div class="canvas-area" id="canvasArea">
+                    <div class="empty-state" id="emptyState">
+                        <h3>选择或导入图像开始标注</h3>
+                        <p>支持批量导入YOLO/COCO格式数据集</p>
+                    </div>
+                </div>
+
+                <div class="panel-right">
+                    <div class="panel-section">
+                        <h4>类别</h4>
+                        <div id="categoryList"></div>
+                    </div>
+                    <div class="panel-section">
+                        <h4>当前标注</h4>
+                        <div id="annotationList"></div>
+                    </div>
+                    <div class="panel-section">
+                        <h4>快捷键</h4>
+                        <div style="font-size:12px;color:#666;line-height:1.8">
+                            <kbd>1-9</kbd> 切换类别<br>
+                            <kbd>Del</kbd> 删除选中<br>
+                            <kbd>Ctrl+S</kbd> 保存<br>
+                            <kbd>←→</kbd> 切换图像
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <button class="btn-primary" style="width:100%" onclick="autoAnnotate()">AI辅助标注</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="newProjectModal">
+        <div class="modal-content">
+            <h2>新建项目</h2>
+            <input type="text" id="projectName" placeholder="项目名称">
+            <input type="text" id="projectDesc" placeholder="项目描述">
+            <div class="modal-actions">
+                <button class="tool-btn" onclick="hideModal('newProjectModal')">取消</button>
+                <button class="btn-primary" onclick="createProject()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="newTaskModal">
+        <div class="modal-content">
+            <h2>新建任务</h2>
+            <input type="text" id="taskName" placeholder="任务名称">
+            <select id="taskType">
+                <option value="bbox">边界框</option>
+                <option value="polygon">多边形分割</option>
+                <option value="keypoint">关键点</option>
+            </select>
+            <div class="modal-actions">
+                <button class="tool-btn" onclick="hideModal('newTaskModal')">取消</button>
+                <button class="btn-primary" onclick="createTask()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <h2>导入图像</h2>
+            <input type="text" id="importDir" placeholder="图像目录路径">
+            <div style="font-size:12px;color:#666;margin-bottom:15px">
+                支持 jpg, png, bmp, tiff 格式
+            </div>
+            <div class="modal-actions">
+                <button class="tool-btn" onclick="hideModal('importModal')">取消</button>
+                <button class="btn-primary" onclick="importImages()">导入</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <h2>导出数据集</h2>
+            <select id="exportFormat">
+                <option value="yolo">YOLO格式</option>
+                <option value="coco">COCO格式</option>
+            </select>
+            <div class="modal-actions">
+                <button class="tool-btn" onclick="hideModal('exportModal')">取消</button>
+                <button class="btn-primary" onclick="doExport()">导出</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="shortcut-hint">
+        <kbd>Ctrl</kbd>+<kbd>S</kbd> 保存 | <kbd>Space</kbd> 下一张 | <kbd>B</kbd> 框模式
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let state = {
+            user: null,
+            currentProject: null,
+            currentTask: null,
+            currentImage: null,
+            images: [],
+            annotations: [],
+            categories: [],
+            selectedCategory: 1,
+            tool: 'bbox',
+            isDrawing: false,
+            startX: 0, startY: 0
+        };
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    state.user = data.user;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('userInfo').textContent = data.user.username;
+                    loadProjects();
+                    loadStats();
+                } else {
+                    alert('登录失败');
+                }
+            });
+        }
+
+        function loadProjects() {
+            fetch(`${API_BASE}/projects`)
+                .then(r => r.json())
+                .then(projects => {
+                    const html = projects.map(p => 
+                        `<div class="sidebar-item ${state.currentProject?.id == p.id ? 'active' : ''}" onclick="selectProject(${p.id})">${p.name}</div>`
+                    ).join('');
+                    document.getElementById('projectList').innerHTML = html || '<div style="color:#999;font-size:12px;padding:10px">暂无项目</div>';
+                });
+        }
+
+        function selectProject(id) {
+            fetch(`${API_BASE}/projects/${id}`).then(r => r.json()).then(p => {
+                state.currentProject = p;
+                loadProjects();
+                loadTasks(id);
+            });
+        }
+
+        function loadTasks(projectId) {
+            fetch(`${API_BASE}/tasks?project_id=${projectId}`)
+                .then(r => r.json())
+                .then(tasks => {
+                    const html = tasks.map(t => 
+                        `<div class="sidebar-item ${state.currentTask?.id == t.id ? 'active' : ''}" onclick="selectTask(${t.id})">
+                            ${t.name}
+                            <span style="font-size:10px;color:#999">(${t.annotation_type})</span>
+                        </div>`
+                    ).join('');
+                    document.getElementById('taskList').innerHTML = html || '<div style="color:#999;font-size:12px;padding:10px">暂无任务</div>';
+                });
+        }
+
+        function selectTask(id) {
+            fetch(`${API_BASE}/tasks/${id}`).then(r => r.json()).then(t => {
+                state.currentTask = t;
+                state.categories = t.categories || [];
+                state.annotations = [];
+                loadTasks(t.project_id);
+                loadCategories();
+                loadImages(id);
+                loadTaskStats(id);
+            });
+        }
+
+        function loadCategories() {
+            const html = state.categories.map((c, i) => 
+                `<div class="category-item ${state.selectedCategory == c.id ? 'active' : ''}" onclick="selectCategory(${c.id})">
+                    <div class="category-color" style="background:${c.color}"></div>
+                    <span class="category-name">${c.name}</span>
+                    <span class="category-shortcut">${i+1}</span>
+                </div>`
+            ).join('');
+            document.getElementById('categoryList').innerHTML = html;
+        }
+
+        function selectCategory(id) {
+            state.selectedCategory = id;
+            loadCategories();
+        }
+
+        function loadImages(taskId) {
+            fetch(`${API_BASE}/tasks/${taskId}/images?limit=100`)
+                .then(r => r.json())
+                .then(images => {
+                    state.images = images;
+                    state.currentImage = images[0] || null;
+                    renderImageList();
+                    if (state.currentImage) {
+                        loadImageData(state.currentImage.id);
+                    }
+                    updateImageCounter();
+                });
+        }
+
+        function renderImageList() {
+            const html = state.images.map(img => 
+                `<img src="${API_BASE}/images/${img.id}/data?max_size=100" class="thumbnail ${state.currentImage?.id == img.id ? 'active' : ''}" 
+                     onclick="selectImage(${img.id})">`
+            ).join('');
+            document.getElementById('imageList').innerHTML = html;
+        }
+
+        function selectImage(id) {
+            const img = state.images.find(i => i.id === id);
+            if (img) {
+                state.currentImage = img;
+                loadImageData(id);
+                renderImageList();
+                updateImageCounter();
+            }
+        }
+
+        function loadImageData(id) {
+            fetch(`${API_BASE}/images/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    state.annotations = data.annotations || [];
+                    renderCanvas(data);
+                    renderAnnotationList();
+                });
+        }
+
+        function renderCanvas(imageData) {
+            const area = document.getElementById('canvasArea');
+            const imgUrl = `${API_BASE}/images/${imageData.id}/data`;
+            
+            let img = area.querySelector('img');
+            if (!img) {
+                img = document.createElement('img');
+                img.onload = () => {
+                    img.dataset.width = imageData.width;
+                    img.dataset.height = imageData.height;
+                    setupDrawing(img);
+                };
+                area.innerHTML = '';
+                area.appendChild(img);
+            }
+            img.src = imgUrl;
+            
+            // Render existing annotations
+            renderAnnotationsOnCanvas(imageData);
+        }
+
+        function renderAnnotationsOnCanvas(imageData) {
+            const area = document.getElementById('canvasArea');
+            area.querySelectorAll('.bbox').forEach(el => el.remove());
+            
+            const img = area.querySelector('img');
+            if (!img) return;
+            
+            state.annotations.forEach((ann, idx) => {
+                if (ann.type === 'bbox' && ann.bbox && ann.bbox.length === 4) {
+                    const cat = state.categories.find(c => c.id === ann.category_id);
+                    const color = cat ? cat.color : '#FF0000';
+                    
+                    const [x, y, w, h] = ann.bbox;
+                    const scaleX = img.offsetWidth / imageData.width;
+                    const scaleY = img.offsetHeight / imageData.height;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'bbox';
+                    div.style.left = (x * imageData.width * scaleX) + 'px';
+                    div.style.top = (y * imageData.height * scaleY) + 'px';
+                    div.style.width = (w * imageData.width * scaleX) + 'px';
+                    div.style.height = (h * imageData.height * scaleY) + 'px';
+                    div.style.borderColor = color;
+                    div.innerHTML = `<div class="bbox-label" style="background:${color}">${cat?.name || 'unknown'}</div>`;
+                    div.onclick = () => selectAnnotation(idx);
+                    area.appendChild(div);
+                }
+            });
+        }
+
+        function setupDrawing(img) {
+            img.onmousedown = (e) => {
+                if (state.tool !== 'bbox') return;
+                const rect = img.getBoundingClientRect();
+                state.isDrawing = true;
+                state.startX = e.clientX - rect.left;
+                state.startY = e.clientY - rect.top;
+            };
+            
+            img.onmousemove = (e) => {
+                if (!state.isDrawing) return;
+            };
+            
+            img.onmouseup = (e) => {
+                if (!state.isDrawing) return;
+                state.isDrawing = false;
+                
+                const rect = img.getBoundingClientRect();
+                const endX = e.clientX - rect.left;
+                const endY = e.clientY - rect.top;
+                
+                const imgW = parseInt(img.dataset.width) || img.offsetWidth;
+                const imgH = parseInt(img.dataset.height) || img.offsetHeight;
+                
+                const x = Math.min(state.startX, endX) / img.offsetWidth;
+                const y = Math.min(state.startY, endY) / img.offsetHeight;
+                const w = Math.abs(endX - state.startX) / img.offsetWidth;
+                const h = Math.abs(endY - state.startY) / img.offsetHeight;
+                
+                if (w > 0.01 && h > 0.01) {
+                    addAnnotation({type: 'bbox', bbox: [x, y, w, h], category_id: state.selectedCategory});
+                }
+            };
+        }
+
+        function addAnnotation(ann) {
+            fetch(`${API_BASE}/images/${state.currentImage.id}/annotations`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(ann)
+            })
+            .then(r => r.json())
+            .then(data => {
+                ann.id = data.id;
+                state.annotations.push(ann);
+                loadImageData(state.currentImage.id);
+            });
+        }
+
+        function renderAnnotationList() {
+            const html = state.annotations.map((ann, idx) => {
+                const cat = state.categories.find(c => c.id === ann.category_id);
+                return `<div class="sidebar-item" onclick="selectAnnotationInList(${idx})">
+                    <div class="category-color" style="background:${cat?.color || '#999'}"></div>
+                    <span>${cat?.name || 'unknown'}</span>
+                    <button style="margin-left:auto;background:none;border:none;color:#999;cursor:pointer" onclick="deleteAnnotation(${idx},event)">x</button>
+                </div>`;
+            }).join('');
+            document.getElementById('annotationList').innerHTML = html || '<div style="color:#999;font-size:12px">暂无标注</div>';
+        }
+
+        function deleteAnnotation(idx, event) {
+            event.stopPropagation();
+            const ann = state.annotations[idx];
+            if (ann.id) {
+                fetch(`${API_BASE}/annotations/${ann.id}`, {method: 'DELETE'})
+                    .then(() => {
+                        state.annotations.splice(idx, 1);
+                        loadImageData(state.currentImage.id);
+                    });
+            }
+        }
+
+        function loadTaskStats(taskId) {
+            fetch(`${API_BASE}/tasks/${taskId}/stats`)
+                .then(r => r.json())
+                .then(stats => {
+                    document.getElementById('statImages').textContent = stats.total_images;
+                    document.getElementById('statAnnotations').textContent = stats.total_annotations;
+                    document.getElementById('progressFill').style.width = stats.progress_percent + '%';
+                    document.getElementById('progressText').textContent = Math.round(stats.progress_percent) + '% 完成';
+                });
+        }
+
+        function loadStats() {
+            fetch(`${API_BASE}/stats`)
+                .then(r => r.json())
+                .then(stats => {
+                    document.getElementById('statImages').textContent = stats.total_images;
+                    document.getElementById('statAnnotations').textContent = stats.total_annotations;
+                });
+        }
+
+        function createProject() {
+            const name = document.getElementById('projectName').value;
+            const desc = document.getElementById('projectDesc').value;
+            fetch(`${API_BASE}/projects`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, description: desc})
+            })
+            .then(r => r.json())
+            .then(data => {
+                hideModal('newProjectModal');
+                loadProjects();
+            });
+        }
+
+        function createTask() {
+            const name = document.getElementById('taskName').value;
+            const type = document.getElementById('taskType').value;
+            fetch(`${API_BASE}/tasks`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, project_id: state.currentProject.id, annotation_type: type})
+            })
+            .then(r => r.json())
+            .then(data => {
+                hideModal('newTaskModal');
+                loadTasks(state.currentProject.id);
+            });
+        }
+
+        function importImages() {
+            const dir = document.getElementById('importDir').value;
+            fetch(`${API_BASE}/tasks/${state.currentTask.id}/import`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({directory: dir, recursive: true})
+            })
+            .then(r => r.json())
+            .then(data => {
+                hideModal('importModal');
+                loadImages(state.currentTask.id);
+                loadTaskStats(state.currentTask.id);
+                alert(`成功导入 ${data.imported} 张图像`);
+            });
+        }
+
+        function exportDataset() {
+            document.getElementById('exportModal').classList.add('show');
+        }
+
+        function doExport() {
+            const format = document.getElementById('exportFormat').value;
+            fetch(`${API_BASE}/tasks/${state.currentTask.id}/export`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({format})
+            })
+            .then(r => r.json())
+            .then(data => {
+                hideModal('exportModal');
+                alert(`导出完成: ${data.path}`);
+            });
+        }
+
+        function saveAnnotation() {
+            // Auto-save on every change
+            loadImageData(state.currentImage.id);
+            alert('已保存');
+        }
+
+        function prevImage() {
+            const idx = state.images.findIndex(i => i.id === state.currentImage?.id);
+            if (idx > 0) {
+                selectImage(state.images[idx - 1].id);
+            }
+        }
+
+        function nextImage() {
+            const idx = state.images.findIndex(i => i.id === state.currentImage?.id);
+            if (idx < state.images.length - 1) {
+                selectImage(state.images[idx + 1].id);
+            }
+        }
+
+        function updateImageCounter() {
+            const idx = state.images.findIndex(i => i.id === state.currentImage?.id);
+            document.getElementById('imageCounter').textContent = `${idx + 1}/${state.images.length}`;
+        }
+
+        function setTool(tool) {
+            state.tool = tool;
+            document.querySelectorAll('.toolbar button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tool + 'Tool')?.classList.add('active');
+        }
+
+        function autoAnnotate() {
+            if (!state.currentImage) return;
+            alert('AI辅助标注功能需要配置SAM模型');
+        }
+
+        function showModal(id) { document.getElementById(id).classList.add('show'); }
+        function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveAnnotation();
+            }
+            if (e.key === 'ArrowLeft') prevImage();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                nextImage();
+            }
+            if (e.key >= '1' && e.key <= '9') {
+                const idx = parseInt(e.key) - 1;
+                if (state.categories[idx]) {
+                    selectCategory(state.categories[idx].id);
+                }
+            }
+        });
+
+        // Initialize
+        document.getElementById('loginScreen').style.display = 'none';
+        login();
+    </script>
+</body>
+</html>

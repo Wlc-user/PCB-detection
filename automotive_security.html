@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车载网络安全 | AutoTest Academy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* 导航 */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: rgba(13,17,23,0.95); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 30px; z-index: 1000;
+        }
+        .nav-logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 700; font-size: 1.1em; }
+        .nav-logo span { color: #f59e0b; }
+        .nav-links { display: flex; gap: 5px; }
+        .nav-link { padding: 8px 14px; border-radius: 6px; color: #8b949e; text-decoration: none; font-size: 0.85em; transition: all 0.2s; }
+        .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .nav-link.active { color: #f59e0b; background: rgba(245,158,11,0.1); }
+        
+        /* 头部 */
+        header { text-align: center; padding: 80px 0 30px; border-bottom: 2px solid #f59e0b; margin-bottom: 30px; }
+        h1 { font-size: 2.2em; background: linear-gradient(90deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        .subtitle { color: #8b949e; font-size: 1em; }
+        
+        /* 卡片 */
+        .card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
+        h2 { color: #f59e0b; margin-bottom: 20px; font-size: 1.3em; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #f59e0b; margin: 15px 0 10px; font-size: 1.1em; }
+        
+        /* 标签 */
+        .badge { font-size: 0.75em; padding: 3px 10px; border-radius: 12px; margin-left: 10px; }
+        .badge-basic { background: #238636; }
+        .badge-advanced { background: #da3633; }
+        .badge-security { background: #f59e0b; color: #000; }
+        
+        /* 核心概念 */
+        .concept-box { background: rgba(245,158,11,0.08); border-left: 4px solid #f59e0b; padding: 20px; border-radius: 0 10px 10px 0; margin: 15px 0; }
+        .concept-box p { color: #d1d5db; line-height: 1.7; }
+        
+        /* 功能网格 */
+        .security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+        .security-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s;
+        }
+        .security-item:hover { border-color: #f59e0b; transform: translateY(-3px); }
+        .security-icon { font-size: 2em; margin-bottom: 12px; }
+        .security-item h3 { color: #fbbf24; margin: 0 0 8px 0; font-size: 1.1em; }
+        .security-item p { color: #9ca3af; font-size: 0.9em; line-height: 1.5; }
+        .security-item ul { color: #9ca3af; font-size: 0.85em; margin: 10px 0 0 18px; }
+        .security-item li { margin: 5px 0; }
+        
+        /* 前置知识 */
+        .prereq { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .prereq-item {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(239,68,68,0.1);
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        .prereq-item.crypto { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+        .prereq-item span { color: #f87171; font-weight: 600; }
+        .prereq-item.crypto span { color: #fbbf24; }
+        
+        /* 代码块 */
+        .code-block { background: #0d1117; border-radius: 10px; padding: 18px; font-family: 'Consolas', monospace; font-size: 0.88em; overflow-x: auto; line-height: 1.6; border: 1px solid #30363d; margin: 15px 0; }
+        .code-block pre { margin: 0; white-space: pre-wrap; }
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .cm { color: #6a737d; font-style: italic; }
+        .num { color: #79c0ff; }
+        .str { color: #a5d6ff; }
+        .type { color: #ffa657; }
+        
+        /* 架构图 */
+        .arch-diagram { background: rgba(0,0,0,0.4); border-radius: 12px; padding: 25px; margin: 20px 0; }
+        .arch-layer { display: flex; align-items: center; margin: 10px 0; gap: 15px; }
+        .arch-box { flex: 1; padding: 15px; border-radius: 8px; text-align: center; font-size: 0.9em; }
+        .arch-app { background: rgba(59,130,246,0.2); border: 1px solid #3b82f6; }
+        .arch-mid { background: rgba(16,185,129,0.2); border: 1px solid #10b981; }
+        .arch-hsm { background: rgba(245,158,11,0.2); border: 1px solid #f59e0b; }
+        .arch-hw { background: rgba(139,92,246,0.2); border: 1px solid #8b5cf6; }
+        .arch-label { width: 100px; color: #9ca3af; font-size: 0.85em; text-align: right; }
+        
+        /* 攻击类型 */
+        .attack-types { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        @media (max-width: 700px) { .attack-types { grid-template-columns: 1fr; } }
+        .attack-item { background: rgba(239,68,68,0.08); padding: 15px; border-radius: 10px; border-left: 3px solid #ef4444; }
+        .attack-item h4 { color: #f87171; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .attack-item p { color: #9ca3af; font-size: 0.9em; }
+        
+        /* 防护措施 */
+        .defense-item { background: rgba(16,185,129,0.08); padding: 15px; border-radius: 10px; border-left: 3px solid #10b981; margin-bottom: 12px; }
+        .defense-item h4 { color: #34d399; margin-bottom: 8px; }
+        .defense-item p { color: #9ca3af; font-size: 0.9em; }
+        
+        /* 流程图 */
+        .flow { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 20px; }
+        .flow-box { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 12px 20px; border-radius: 8px; color: #000; font-weight: 600; }
+        .flow-arrow { color: #f59e0b; font-size: 1.5em; }
+        
+        /* 提示 */
+        .tip { background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6; padding: 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }
+        .tip-title { color: #60a5fa; font-weight: 600; margin-bottom: 5px; }
+        
+        /* 响应式 */
+        @media (max-width: 800px) {
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">🚗 AutoTest <span>Academy</span></a>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">首页</a>
+            <a href="capl_basics.html" class="nav-link">CAPL基础</a>
+            <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
+            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
+            <a href="automotive_security.html" class="nav-link active">网络安全</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🔒 车载网络安全</h1>
+            <p class="subtitle">Automotive Cybersecurity · ISO/SAE 21434 · UNECE R155</p>
+        </header>
+
+        <!-- 核心概念 -->
+        <div class="card">
+            <h2>💡 核心概念</h2>
+            <div class="concept-box">
+                <p>保护车载网络免受攻击，包括 <strong>HSM安全芯片</strong>、<strong>SecOC真实通信</strong>、<strong>E2E端到端保护</strong>、<strong>安全启动</strong> 等关键技术。随着汽车智能化和网联化，网络安全已成为功能安全之外的另一大安全支柱。</p>
+            </div>
+        </div>
+
+        <!-- 安全架构 -->
+        <div class="card">
+            <h2>🏗️ 车载安全架构 <span class="badge badge-security">架构</span></h2>
+            <div class="arch-diagram">
+                <div class="arch-layer">
+                    <div class="arch-label">应用层</div>
+                    <div class="arch-box arch-app">诊断服务<br>OTA升级<br>远程控制</div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-label">中间层</div>
+                    <div class="arch-box arch-mid">SecOC验证<br>E2E保护<br>密钥管理</div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-label">硬件层</div>
+                    <div class="arch-box arch-hsm">HSM/TPM<br>加密引擎<br>安全存储</div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-label">物理层</div>
+                    <div class="arch-box arch-hw">CAN/CAN FD<br>Ethernet<br>DoIP</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 包含内容 -->
+        <div class="card">
+            <h2>📋 包含内容</h2>
+            <div class="security-grid">
+                <div class="security-item">
+                    <div class="security-icon">🔐</div>
+                    <h3>HSM (Hardware Security Module)</h3>
+                    <p>硬件安全模块，提供密钥存储、加密运算、随机数生成等安全功能</p>
+                    <ul>
+                        <li>对称加密 (AES-128/256)</li>
+                        <li>非对称加密 (RSA/ECC)</li>
+                        <li>哈希运算 (SHA-256)</li>
+                        <li>真随机数生成器 (TRNG)</li>
+                    </ul>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">🔏</div>
+                    <h3>SecOC (Secure Onboard Communication)</h3>
+                    <p>安全车载通信，基于AUTOSAR标准，防止报文重放和篡改攻击</p>
+                    <ul>
+                        <li>Freshness Value (FV) 新鲜值</li>
+                        <li>Authenticator 认证码</li>
+                        <li>基于MAC的消息认证</li>
+                        <li>同步与验证机制</li>
+                    </ul>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">🛡️</div>
+                    <h3>E2E (End-to-End) 保护</h3>
+                    <p>端到端通信保护，确保数据从发送方到接收方的完整性和正确性</p>
+                    <ul>
+                        <li>CRC校验</li>
+                        <li>序列号检查</li>
+                        <li>Alive计数器</li>
+                        <li>Profile 1-7 配置</li>
+                    </ul>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">🔒</div>
+                    <h3>安全启动 (Secure Boot)</h3>
+                    <p>确保ECU只执行经过认证的合法软件，防止恶意代码运行</p>
+                    <ul>
+                        <li>启动链验证</li>
+                        <li>数字签名验证</li>
+                        <li>信任根 (Root of Trust)</li>
+                        <li>回滚保护</li>
+                    </ul>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">✍️</div>
+                    <h3>OTA签名验证</h3>
+                    <p>软件升级包的数字签名验证，确保升级包来源可信且未被篡改</p>
+                    <ul>
+                        <li>RSA/ECC 签名</li>
+                        <li>证书链验证</li>
+                        <li>哈希校验</li>
+                        <li>版本回滚检查</li>
+                    </ul>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">👁️</div>
+                    <h3>入侵检测 (IDS)</h3>
+                    <p>Intrusion Detection System，监控网络异常行为并告警</p>
+                    <ul>
+                        <li>报文频率异常检测</li>
+                        <li>ID异常检测</li>
+                        <li>载荷异常分析</li>
+                        <li>安全事件记录</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 常见攻击类型 -->
+        <div class="card">
+            <h2>⚠️ 常见攻击类型 <span class="badge badge-advanced">威胁</span></h2>
+            <div class="attack-types">
+                <div class="attack-item">
+                    <h4>🔄 重放攻击 (Replay Attack)</h4>
+                    <p>攻击者截获合法报文后重新发送，欺骗ECU执行非预期操作</p>
+                </div>
+                <div class="attack-item">
+                    <h4>✂️ 中间人攻击 (MITM)</h4>
+                    <p>攻击者插入通信链路，窃听、篡改或阻断正常通信</p>
+                </div>
+                <div class="attack-item">
+                    <h4>🎭 伪装攻击 (Spoofing)</h4>
+                    <p>伪造ECU身份发送虚假报文，干扰车辆正常运行</p>
+                </div>
+                <div class="attack-item">
+                    <h4>💉 代码注入</h4>
+                    <p>通过漏洞向ECU注入恶意代码，获取控制权</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 防护措施 -->
+        <div class="card">
+            <h2>🛡️ 防护措施 <span class="badge badge-security">方案</span></h2>
+            
+            <div class="defense-item">
+                <h4>SecOC 实现示例</h4>
+                <div class="code-block">
+<pre><span class="cm">/* SecOC 报文认证流程 */</span>
+<span class="cm">// 1. 构建认证数据</span>
+<span class="type">uint8</span> dataToAuth[<span class="num">16</span>];
+<span class="fn">memcpy</span>(dataToAuth, pduData, pduLength);
+<span class="fn">memcpy</span>(dataToAuth + pduLength, freshnessValue, <span class="num">4</span>);
+
+<span class="cm">// 2. 计算MAC (Message Authentication Code)</span>
+<span class="type">uint8</span> mac[<span class="num">4</span>];
+<span class="fn">HMAC_SHA256</span>(secretKey, dataToAuth, dataLen, mac);
+
+<span class="cm">// 3. 构建SecOC报文: [原始数据] + [FV] + [MAC]</span>
+<span class="fn">SecOC_Transmit</span>(pduId, securedPdu);
+
+<span class="cm">// 4. 接收端验证</span>
+<span class="kw">if</span> (<span class="fn">SecOC_Verify</span>(pduId, securedPdu) == E_OK) {
+    <span class="cm">// 新鲜值和MAC验证通过，处理报文</span>
+} <span class="kw">else</span> {
+    <span class="cm">// 验证失败，丢弃报文并记录安全事件</span>
+}</pre>
+                </div>
+            </div>
+            
+            <div class="defense-item">
+                <h4>安全启动验证流程</h4>
+                <div class="flow">
+                    <div class="flow-box">BootROM</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">验证BL</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">验证APP</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">启动APP</div>
+                </div>
+            </div>
+            
+            <div class="defense-item">
+                <h4>E2E Profile 1 配置</h4>
+                <div class="code-block">
+<pre><span class="cm">/* E2E Profile 1 - 标准配置 */</span>
+<span class="kw">typedef struct</span> {
+    <span class="type">uint8</span> Counter;      <span class="cm">// 4-bit 序列号 (0-15)</span>
+    <span class="type">uint8</span> CRC;          <span class="cm">// 8-bit CRC校验</span>
+    <span class="type">uint8</span> DataID;       <span class="cm">// 16-bit Data ID (隐式)</span>
+} E2E_P01Header;
+
+<span class="cm">// CRC计算包含: DataID + 计数器 + 数据</span>
+<span class="type">uint8</span> crc = <span class="fn">E2E_P01CalculateCRC</span>(data, length, dataId, counter);</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- 密钥管理 -->
+        <div class="card">
+            <h2>🔑 密钥管理 <span class="badge badge-advanced">进阶</span></h2>
+            <div class="security-grid">
+                <div class="security-item">
+                    <div class="security-icon">🗝️</div>
+                    <h3>密钥分层</h3>
+                    <ul>
+                        <li>Root Key - 根密钥（HSM内部）</li>
+                        <li>Device Key - 设备密钥</li>
+                        <li>Session Key - 会话密钥</li>
+                        <li>Application Key - 应用密钥</li>
+                    </ul>
+                </div>
+                <div class="security-item">
+                    <div class="security-icon">📦</div>
+                    <h3>密钥存储</h3>
+                    <ul>
+                        <li>HSM安全存储区</li>
+                        <li>一次性可编程(OTP)</li>
+                        <li>加密Flash存储</li>
+                        <li>密钥派生机制</li>
+                    </ul>
+                </div>
+                <div class="security-item">
+                    <div class="security-icon">🔄</div>
+                    <h3>密钥更新</h3>
+                    <ul>
+                        <li>安全通道建立</li>
+                        <li>密钥协商协议</li>
+                        <li>密钥版本管理</li>
+                        <li>紧急密钥撤销</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标准法规 -->
+        <div class="card">
+            <h2>📜 标准与法规</h2>
+            <div class="security-grid">
+                <div class="security-item">
+                    <div class="security-icon">📋</div>
+                    <h3>ISO/SAE 21434</h3>
+                    <p>道路车辆网络安全工程国际标准，定义全生命周期的网络安全管理流程</p>
+                </div>
+                <div class="security-item">
+                    <div class="security-icon">🌍</div>
+                    <h3>UNECE R155</h3>
+                    <p>联合国网络安全法规，要求车辆制造商建立网络安全管理体系(CSMS)</p>
+                </div>
+                <div class="security-item">
+                    <div class="security-icon">🔧</div>
+                    <h3>AUTOSAR Crypto</h3>
+                    <p>AUTOSAR加密服务栈，提供标准化加密接口和实现</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 前置知识 -->
+        <div class="card">
+            <h2>🔗 前置知识</h2>
+            <div class="prereq">
+                <div class="prereq-item">
+                    <span>🚗</span> CAN/CAN FD
+                </div>
+                <div class="prereq-item crypto">
+                    <span>🔐</span> 加密基础
+                </div>
+            </div>
+            <div class="tip" style="margin-top: 20px;">
+                <div class="tip-title">💡 学习建议</div>
+                <p style="color: #9ca3af;">建议先掌握CAN/CAN FD通信基础，了解对称加密、非对称加密、哈希函数等密码学基础概念，再深入学习车载网络安全技术。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+E:\pyspace\opencv\PortComm\obj\Debug\net9.0\test.GeneratedMSBuildEditorConfig.editorconfig
+E:\pyspace\opencv\PortComm\obj\Debug\net9.0\test.AssemblyInfoInputs.cache
+E:\pyspace\opencv\PortComm\obj\Debug\net9.0\test.AssemblyInfo.cs
+E:\pyspace\opencv\PortComm\obj\Debug\net9.0\test.csproj.CoreCompileInputs.cache
+E:\pyspace\opencv\PortComm\obj\Debug\net9.0\test.sourcelink.json

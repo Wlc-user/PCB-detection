@@ -1,0 +1,111 @@
+# PaddlePaddle 安装与配置指南
+# ================================
+
+# 一、安装命令
+# ------------
+
+# 1. CPU版本 (适合开发测试)
+# pip install paddlepaddle
+
+# 2. GPU版本 (需要CUDA环境)
+# pip install paddlepaddle-gpu
+
+# 3. 指定版本 (推荐生产环境)
+# pip install paddlepaddle-gpu==2.6.0 -i https://mirror.baidu.com/pypi/simple
+
+# 4. PaddleOCR 专用
+# pip install paddleocr paddlepaddle
+
+
+# 二、模型下载
+# ------------
+
+# 人脸检测模型 (RetinaFace)
+face_detection_models:
+  - name: " retinaface_mobilenet_v1"
+    url: "https://paddleseg.bj.bcebos.com/dygraph/backbone/resnet50_vd_ssld_v2.tar.gz"
+    config: "configs/face/retinaface_mobilenet_v1.yaml"
+
+  - name: "blazeface"
+    url: "https://paddle-detection-models.bj.bcebos.com/blazeface.nb"
+    # 轻量级人脸检测
+
+# OCR模型
+ocr_models:
+  detection:
+    - name: "DB/PGNet"
+      url: "https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_PP-OCRv3_det_infer.tar"
+  
+  recognition:
+    - name: "CRNN/SVTR"
+      url: "https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_PP-OCRv3_rec_infer.tar"
+  
+  angle_class:
+    - name: "AngleCls"
+      url: "https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar"
+
+
+# 三、多任务配置
+# --------------
+task_configs:
+  
+  pcb:
+    framework: "ultralytics"  # PyTorch YOLOv8
+    model_path: "models/yolov8/train/weights/best.pt"
+    conf_threshold: 0.25
+    iou_threshold: 0.45
+    imgsz: 640
+  
+  face:
+    framework: "paddle"       # PaddlePaddle
+    model_path: "models/paddle/face_detection"
+    backend: "opencv_dnn"      # 备用: opencv_dnn
+    conf_threshold: 0.5
+    keypoints: true
+  
+  ocr:
+    framework: "paddle"        # PaddlePaddle OCR
+    use_angle_cls: true
+    lang: "ch"                 # ch/en/chie
+    det_model: "DB++"
+    rec_model: "SVTR"
+
+
+# 四、PaddleX 集成 (可选)
+# ------------------------
+paddlex:
+  enabled: false
+  
+  # 安装
+  # pip install paddlex
+  
+  # 使用示例
+  # import paddlex as pdx
+  # model = pdx.load_model('models/paddle/pcb_detection')
+  
+  models:
+    - name: "PP-YOLOE"
+      task: "detection"
+      url: "https://paddle-image-imgs.bj.bcebos.com/paddlex/models/yolov8s-466.zip"
+    
+    - name: "PP-LiteSeg"
+      task: "segmentation"
+      url: "https://paddle-image-imgs.bj.bcebos.com/paddlex/models/pp_liteseg_cityscapes.zip"
+
+
+# 五、环境检测脚本
+# -----------------
+environment_check:
+  check_items:
+    - name: "PaddlePaddle"
+      import: "import paddle"
+      version_cmd: "paddle.__version__"
+    
+    - name: "PaddleOCR"
+      import: "from paddleocr import PaddleOCR"
+    
+    - name: "CUDA"
+      check: "paddle.device.cuda.device_count() > 0"
+    
+    - name: "cuDNN"
+      check: "paddle.device.is_compiled_with_cudnn()"

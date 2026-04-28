@@ -169,6 +169,88 @@
         .result-item.failed { background: rgba(248,81,73,0.2); border: 1px solid #f85149; }
         .result-item.total { background: rgba(88,166,255,0.2); border: 1px solid #58a6ff; }
         .result-item .number { font-size: 2em; display: block; }
+        
+        /* OJ 在线评测模块 - 按使用频率分类 */
+        .oj-section { margin-top: 30px; }
+        .oj-container { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        @media (max-width: 900px) { .oj-container { grid-template-columns: 1fr; } }
+        
+        /* 使用频率统计 */
+        .usage-stats { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        .usage-stat { flex: 1; min-width: 150px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; text-align: center; }
+        .usage-stat .percent { font-size: 2em; font-weight: bold; }
+        .usage-stat .label { font-size: 0.85em; color: #8b949e; }
+        .usage-stat.high { border: 1px solid #238636; }
+        .usage-stat.high .percent { color: #238636; }
+        .usage-stat.medium { border: 1px solid #d97706; }
+        .usage-stat.medium .percent { color: #d97706; }
+        .usage-stat.low { border: 1px solid #8957e5; }
+        .usage-stat.low .percent { color: #8957e5; }
+        
+        /* 分类标签 */
+        .freq-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 0.7em; }
+        .freq-tag.high { background: rgba(35,134,54,0.3); color: #238636; }
+        .freq-tag.medium { background: rgba(217,119,6,0.3); color: #d97706; }
+        .freq-tag.low { background: rgba(137,87,229,0.3); color: #8957e5; }
+        
+        /* 题目分类区域 */
+        .problem-category { margin-bottom: 15px; }
+        .category-header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px 8px 0 0; margin-bottom: 1px; }
+        .category-header.high { background: rgba(35,134,54,0.2); }
+        .category-header.medium { background: rgba(217,119,6,0.2); }
+        .category-header.low { background: rgba(137,87,229,0.2); }
+        .category-header h4 { font-size: 0.9em; display: flex; align-items: center; gap: 8px; }
+        .category-header .count { font-size: 0.75em; opacity: 0.8; }
+        
+        .problem-list { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px; max-height: 520px; overflow-y: auto; }
+        .problem-item { padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        .problem-item:hover { background: rgba(255,255,255,0.1); }
+        .problem-item.active { border-color: #238636; }
+        .problem-item.high-active { background: rgba(35,134,54,0.3); }
+        .problem-item.medium-active { background: rgba(217,119,6,0.3); }
+        .problem-item.low-active { background: rgba(137,87,229,0.3); }
+        .problem-item h4 { color: #fff; font-size: 0.88em; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+        .problem-item .tag { font-size: 0.6em; padding: 2px 6px; border-radius: 6px; }
+        .problem-item .easy { background: #238636; }
+        .problem-item .medium { background: #d97706; }
+        .problem-item .hard { background: #da3633; }
+        .problem-item p { color: #8b949e; font-size: 0.72em; }
+        
+        .editor-panel { display: flex; flex-direction: column; gap: 12px; }
+        .problem-desc { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .problem-desc h3 { color: #238636; margin-bottom: 8px; font-size: 1.05em; display: flex; align-items: center; gap: 10px; }
+        .problem-desc .diff { font-size: 0.65em; padding: 2px 8px; border-radius: 8px; background: #238636; color: #fff; }
+        .problem-desc .diff.medium { background: #d97706; }
+        .problem-desc .diff.hard { background: #da3633; }
+        .problem-desc pre { background: #0d1117; padding: 10px; border-radius: 8px; font-family: Consolas, monospace; font-size: 0.82em; margin: 8px 0; white-space: pre-wrap; }
+        .problem-desc .io { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .problem-desc .io-box { background: #0d1117; padding: 8px; border-radius: 8px; }
+        .problem-desc .io-box h5 { color: #238636; margin-bottom: 5px; font-size: 0.78em; }
+        .problem-desc .io-box code { font-family: Consolas, monospace; font-size: 0.78em; color: #a5d6ff; display: block; }
+        .problem-desc .usage-tip { margin-top: 10px; padding: 8px 10px; background: rgba(88,166,255,0.1); border-radius: 6px; font-size: 0.8em; color: #58a6ff; }
+        
+        .code-editor textarea { width: 100%; min-height: 150px; background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 10px; padding: 12px; font-family: 'Consolas', monospace; font-size: 0.82em; line-height: 1.5; resize: vertical; }
+        .code-editor textarea:focus { outline: none; border-color: #238636; }
+        .code-toolbar { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .oj-result { background: #0d1117; border-radius: 10px; padding: 10px; max-height: 160px; overflow-y: auto; }
+        .oj-result h4 { color: #238636; margin-bottom: 8px; font-size: 0.9em; }
+        .test-case { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 5px; margin-bottom: 4px; font-size: 0.82em; }
+        .test-case.pass { background: rgba(35,134,54,0.2); color: #238636; }
+        .test-case.fail { background: rgba(248,81,73,0.2); color: #f85149; }
+        .test-case.running { background: rgba(88,166,255,0.2); color: #58a6ff; }
+        
+        .leaderboard { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px; margin-top: 12px; }
+        .leaderboard h4 { color: #238636; margin-bottom: 8px; font-size: 0.9em; }
+        .rank-item { display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 5px; margin-bottom: 4px; }
+        .rank-item:nth-child(2) { background: rgba(255,215,0,0.12); }
+        .rank-item:nth-child(3) { background: rgba(192,192,192,0.08); }
+        .rank-item:nth-child(4) { background: rgba(205,127,50,0.08); }
+        .rank-num { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.7em; background: rgba(255,255,255,0.1); }
+        .rank-item:nth-child(2) .rank-num { background: #ffd700; color: #000; }
+        .rank-item:nth-child(3) .rank-num { background: #c0c0c0; color: #000; }
+        .rank-item:nth-child(4) .rank-num { background: #cd7f32; color: #fff; }
+        .rank-name { flex: 1; color: #fff; font-size: 0.82em; }
+        .rank-score { color: #238636; font-weight: bold; font-size: 0.82em; }
     </style>
 </head>
 <body>
@@ -182,7 +264,7 @@
         <div class="nav-links" id="navLinks">
             <a href="index.html" class="nav-link">首页</a>
             <a href="learning_roadmap.html" class="nav-link">学习路线</a>
-            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
+            <a href="capl_basics.html" class="nav-link">CAPL基础</a>
             <a href="capl_test_framework.html" class="nav-link active">测试框架</a>
             <a href="uds_state_machine.html" class="nav-link">UDS诊断</a>
             <a href="canfd_democar.html" class="nav-link">CAN FD</a>
@@ -512,6 +594,140 @@
                 </div>
             </div>
         </div>
+
+        <!-- OJ 在线评测模块 - 按使用频率分类 -->
+        <div class="card oj-section">
+            <h2>🏆 CAPL OJ 在线评测 <span class="badge badge-framework">按频率分类</span></h2>
+            
+            <!-- 使用频率统计 -->
+            <div class="usage-stats">
+                <div class="usage-stat high">
+                    <div class="percent">65%</div>
+                    <div class="label">高频场景 · 报文/定时器</div>
+                </div>
+                <div class="usage-stat medium">
+                    <div class="percent">25%</div>
+                    <div class="label">中频场景 · 解析/状态机</div>
+                </div>
+                <div class="usage-stat low">
+                    <div class="percent">10%</div>
+                    <div class="label">低频场景 · 诊断/安全</div>
+                </div>
+            </div>
+            
+            <div class="oj-container">
+                <!-- 题目列表 - 按使用频率分类 -->
+                <div class="problem-list">
+                    <h4 style="color:#238636;margin-bottom:12px;font-size:0.9em;">📝 题目列表</h4>
+                    
+                    <!-- 高频场景 -->
+                    <div class="problem-category">
+                        <div class="category-header high">
+                            <h4>🔥 高频 <span class="count">(日常工作)</span></h4>
+                        </div>
+                        <div class="problem-item high-active active" onclick="selectProblem(0)">
+                            <h4>P1 · 周期报文 <span class="tag easy">入门</span></h4>
+                            <p>100ms周期发送 · 最常用</p>
+                        </div>
+                        <div class="problem-item high-active" onclick="selectProblem(1)">
+                            <h4>P2 · 定时器 <span class="tag easy">入门</span></h4>
+                            <p>msTimer/secondTimer</p>
+                        </div>
+                        <div class="problem-item high-active" onclick="selectProblem(2)">
+                            <h4>P3 · 报文收发 <span class="tag easy">入门</span></h4>
+                            <p>TX/RX处理</p>
+                        </div>
+                        <div class="problem-item high-active" onclick="selectProblem(3)">
+                            <h4>P4 · 环境变量 <span class="tag medium">基础</span></h4>
+                            <p>@sysvar读写</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 中频场景 -->
+                    <div class="problem-category">
+                        <div class="category-header medium">
+                            <h4>📈 中频 <span class="count">(项目需要)</span></h4>
+                        </div>
+                        <div class="problem-item medium-active" onclick="selectProblem(4)">
+                            <h4>P5 · 报文解析 <span class="tag medium">基础</span></h4>
+                            <p>信号提取/转换</p>
+                        </div>
+                        <div class="problem-item medium-active" onclick="selectProblem(5)">
+                            <h4>P6 · 状态机 <span class="tag medium">进阶</span></h4>
+                            <p>enum状态切换</p>
+                        </div>
+                        <div class="problem-item medium-active" onclick="selectProblem(6)">
+                            <h4>P7 · 信号计算 <span class="tag medium">进阶</span></h4>
+                            <p>物理值/原始值转换</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 低频场景 -->
+                    <div class="problem-category">
+                        <div class="category-header low">
+                            <h4>🔧 低频 <span class="count">(专家级)</span></h4>
+                        </div>
+                        <div class="problem-item low-active" onclick="selectProblem(7)">
+                            <h4>P8 · UDS诊断 <span class="tag hard">挑战</span></h4>
+                            <p>会话切换</p>
+                        </div>
+                        <div class="problem-item low-active" onclick="selectProblem(8)">
+                            <h4>P9 · 断言测试 <span class="tag hard">挑战</span></h4>
+                            <p>testCase编写</p>
+                        </div>
+                        <div class="problem-item low-active" onclick="selectProblem(9)">
+                            <h4>P10 · 加密解密 <span class="tag hard">专家</span></h4>
+                            <p>SecOC/E2E</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 编辑器面板 -->
+                <div class="editor-panel">
+                    <div class="problem-desc" id="problemDesc">
+                        <h3>P1 - 报文发送 <span class="diff">入门</span></h3>
+                        <p style="color:#8b949e;font-size:0.9em;margin-bottom:10px;">编写一个CAPL程序，声明一个ID为0x200的报文，周期100ms发送。</p>
+                        <pre>// 要求：
+// 1. 声明 message 0x200 DriveMsg
+// 2. 在 on start 中启动定时器
+// 3. 在 on timer 中发送报文</pre>
+                        <div class="io">
+                            <div class="io-box">
+                                <h5>📥 输入</h5>
+                                <code>无（自动触发）</code>
+                            </div>
+                            <div class="io-box">
+                                <h5>📤 输出</h5>
+                                <code>每100ms输出: "TX: 0x200"</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="code-editor">
+                        <textarea id="codeEditor" placeholder="在此编写CAPL代码..."></textarea>
+                        <div class="code-toolbar">
+                            <button class="btn btn-run" onclick="runCode()">▶️ 运行</button>
+                            <button class="btn btn-reset" onclick="resetCode()">🔄 重置</button>
+                            <button class="btn" style="background:#6e40c9;color:#fff;" onclick="submitCode()">📤 提交</button>
+                        </div>
+                    </div>
+                    
+                    <div class="oj-result" id="ojResult">
+                        <h4>📋 运行结果</h4>
+                        <div class="test-case pending">点击"运行"开始评测...</div>
+                    </div>
+                    
+                    <!-- 排行榜 -->
+                    <div class="leaderboard">
+                        <h4>🏅 排行榜 <span style="font-size:0.75em;color:#8b949e;">(按完成度)</span></h4>
+                        <div class="rank-item"><div class="rank-num">1</div><div class="rank-name">张工_CAPA</div><div class="rank-score">10/10题</div></div>
+                        <div class="rank-item"><div class="rank-num">2</div><div class="rank-name">李测试</div><div class="rank-score">8/10题</div></div>
+                        <div class="rank-item"><div class="rank-num">3</div><div class="rank-name">王诊断</div><div class="rank-score">7/10题</div></div>
+                        <div class="rank-item"><div class="rank-num">4</div><div class="rank-name">我</div><div class="rank-score">4/10题</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -582,6 +798,399 @@
             updateStats();
             document.getElementById('progressBar').style.width = '0%';
             document.getElementById('progressBar').textContent = '0%';
+        }
+
+        // OJ 模块 - 按使用频率分类
+        const problems = [
+            // ==================== 高频场景 (65%) ====================
+            {
+                id: 1, title: '周期报文发送', difficulty: 'easy', level: '入门', freq: 'high',
+                desc: '声明ID为0x200的报文，每100ms周期发送。CAN测试中最常用的cyclic报文模式。',
+                hint: '// 1. 声明报文和定时器\n// 2. on start 中启动定时器\n// 3. on timer 中发送报文并重置',
+                input: '自动触发（on start）',
+                output: '每100ms: "TX 0x200 [8] 00 00 00 00 00 00 00 00"',
+                usage: '⭐ 日常工作中最常用，80%的CAPL脚本需要此模式',
+                template: `variables {
+    msTimer CyclicTx;
+    message 0x200 DriveMsg;
+}
+
+on start {
+    // TODO: 启动定时器，周期100ms
+}
+
+on timer CyclicTx {
+    // TODO: 发送报文并重设定时器
+}`
+            },
+            {
+                id: 2, title: '多定时器使用', difficulty: 'easy', level: '入门', freq: 'high',
+                desc: '同时使用msTimer和secondTimer，分别控制毫秒级和秒级任务。',
+                hint: '// msTimer用于短间隔\n// secondTimer用于长间隔',
+                input: '自动触发',
+                output: 'msTimer: "Tick 10ms", secondTimer: "每秒计数"',
+                usage: '⭐ 多任务并行处理的基础',
+                template: `variables {
+    msTimer FastTimer;    // 10ms快速任务
+    secondTimer SlowTimer; // 1秒慢速任务
+    int fastCount = 0;
+    int slowCount = 0;
+}
+
+on start {
+    // TODO: 启动两个定时器
+}
+
+on timer FastTimer {
+    // TODO: fastCount++, 输出, 重置10ms定时器
+}
+
+on timer SlowTimer {
+    // TODO: slowCount++, 输出, 重置1s定时器
+}`
+            },
+            {
+                id: 3, title: '报文发送接收', difficulty: 'easy', level: '入门', freq: 'high',
+                desc: '发送ID为0x100的报文，并监听0x101的响应。',
+                hint: '// output()发送报文\n// on message 0xNNN 接收',
+                input: '无（按键触发发送）',
+                output: 'TX: 0x100, RX: 0x101响应',
+                usage: '⭐ 命令-响应模式是诊断通信基础',
+                template: `variables {
+    message 0x100 CmdMsg;
+    message 0x101 RespMsg;
+}
+
+on start {
+    write("等待接收0x101...");
+}
+
+on key 't' {
+    // TODO: 设置报文数据并发送
+    output(CmdMsg);
+}
+
+on message 0x101 {
+    // TODO: 收到响应后输出
+    write("收到响应!");
+}`
+            },
+            {
+                id: 4, title: '环境变量操作', difficulty: 'medium', level: '基础', freq: 'high',
+                desc: '读写系统变量（@sysvar），实现CAPL与Panel/其他节点的数据交互。',
+                hint: '// @sysvar::Path\\To\\Var\n// 或使用 getSignal()',
+                input: '系统变量输入',
+                output: '读取/写入变量值',
+                usage: '⭐ 与CANoe面板、IG节点交互的核心',
+                template: `variables {
+    word speed;
+    byte gear;
+}
+
+// 读取环境变量
+on key 'r' {
+    // TODO: 读取系统变量 Engine::Speed
+    // speed = @sysvar::Engine::Speed;
+    write("Speed: %d", speed);
+}
+
+// 写入环境变量
+on key 'w' {
+    // TODO: 写入系统变量 Drivetrain::Gear
+    // @sysvar::Drivetrain::Gear = gear;
+    write("Gear set to: %d", gear);
+}`
+            },
+            // ==================== 中频场景 (25%) ====================
+            {
+                id: 5, title: '报文信号解析', difficulty: 'medium', level: '基础', freq: 'medium',
+                desc: '解析ID为0x300的报文，提取byte0-1组成16位速度值（Motorola格式，低字节在前）。',
+                hint: '// this.byte(n) 获取字节\n// 信号通常跨字节',
+                input: 'ID:0x300 [8] A3 04 xx xx xx xx xx xx',
+                output: '速度: 0x04A3 = 1219 (扩大10倍)',
+                usage: '📊 解析CAN报文是数据分析的第一步',
+                template: `on message 0x300 {
+    // TODO: byte0为低字节，byte1为高字节
+    word rawSpeed;
+    float speed;
+    
+    // 组装Motorola格式的速度信号
+    // rawSpeed = byte1 << 8 | byte0;
+    // speed = rawSpeed * 0.1; // 分辨率0.1
+    
+    write("速度: %.1f km/h", speed);
+}`
+            },
+            {
+                id: 6, title: '状态机设计', difficulty: 'medium', level: '进阶', freq: 'medium',
+                desc: '实现驾驶模式状态机：IDLE → DRIVE → SPORT → IDLE，支持模式切换和超时保护。',
+                hint: '// enum定义状态\n// switch/if切换',
+                input: '报文0x200 byte0: 1=DRIVE, 2=SPORT, 3=IDLE',
+                output: '状态切换日志',
+                usage: '📈 复杂测试场景必备',
+                template: `variables {
+    enum DriveMode { IDLE, DRIVE, SPORT };
+    DriveMode mode = IDLE;
+    msTimer ModeTimeout;
+}
+
+on message 0x200 {
+    byte cmd = this.byte(0);
+    
+    // TODO: 实现状态机切换逻辑
+    switch(mode) {
+        case IDLE:
+            if(cmd == 1) {
+                // TODO: 切换到DRIVE
+            }
+            break;
+        case DRIVE:
+            if(cmd == 2) {
+                // TODO: 切换到SPORT
+            }
+            else if(cmd == 3) {
+                // TODO: 切换到IDLE
+            }
+            break;
+        case SPORT:
+            if(cmd == 3) {
+                // TODO: 切换到IDLE
+            }
+            break;
+    }
+}
+
+on timer ModeTimeout {
+    write("状态机超时，返回IDLE");
+    mode = IDLE;
+}`
+            },
+            {
+                id: 7, title: '信号计算转换', difficulty: 'medium', level: '进阶', freq: 'medium',
+                desc: '将CAN报文的原始值转换为物理值：温度(-40~125℃)、转速(0~8000rpm)、百分比(0~100%)。',
+                hint: '// 公式: 物理值 = (原始值 * 分辨率) + 偏移量',
+                input: '原始信号值',
+                output: '物理值显示',
+                usage: '📊 信号处理和仪表显示',
+                template: `on message 0x400 {
+    // 温度: byte0, 范围-40~125℃, 分辨率1
+    // TODO: 解析并转换温度
+    
+    // 转速: byte1-2, 范围0~8000rpm, 分辨率0.25
+    // TODO: 解析并转换转速
+    
+    // 油门: byte3, 范围0~100%, 分辨率0.4
+    // TODO: 解析并转换油门开度
+    
+    write("温度:%d℃ 转速:%.1fRPM 油门:%.1f%%", temp, rpm, throttle);
+}`
+            },
+            // ==================== 低频场景 (10%) ====================
+            {
+                id: 8, title: 'UDS会话切换', difficulty: 'hard', level: '挑战', freq: 'low',
+                desc: '实现UDS诊断会话控制：默认会话(0x01)→扩展会话(0x03)→编程会话(0x02)，包含超时处理。',
+                hint: '// diagRequest发送诊断请求\n// on diagResponse处理响应',
+                input: '按键触发',
+                output: '会话切换成功/失败',
+                usage: '🔧 诊断功能测试',
+                template: `variables {
+    diagRequest UDS.SessionControl_req sessionReq;
+    byte currentSession = 0x01;
+}
+
+on key '1' {
+    // TODO: 发送10 01 进入默认会话
+}
+
+on key '3' {
+    // TODO: 发送10 03 进入扩展会话
+}
+
+on key '2' {
+    // TODO: 发送10 02 进入编程会话
+}
+
+on diagResponse sessionReq {
+    if(this.pending) return;
+    
+    if(this.ok) {
+        write("会话切换成功!");
+        // TODO: 解析响应确认会话类型
+    }
+    else {
+        write("会话切换失败: NRC %02X", this.errCode);
+    }
+}`
+            },
+            {
+                id: 9, title: 'TestCase断言', difficulty: 'hard', level: '挑战', freq: 'low',
+                desc: '编写完整的testcase，使用testCheck/testWaitForMessage进行自动化测试。',
+                hint: '// testcase定义测试函数\n// testCheck(condition, desc)',
+                input: '模拟ECU响应',
+                output: 'PASS/FAIL结果',
+                usage: '🔧 自动化测试框架',
+                template: `variables {
+    message 0x500 RespMsg;
+    float g_actualSpeed;
+}
+
+testcase TC_SpeedVerification()
+{
+    // 1. 发送速度请求
+    message 0x400 req;
+    req.byte(0) = 0x01; // Read Speed
+    output(req);
+    
+    // 2. 等待响应
+    if(testWaitForMessage(0x500, 1000) == 0) {
+        testStepFail("响应超时");
+        return;
+    }
+    
+    // 3. 验证结果
+    // TODO: 解析速度值
+    
+    // 4. 断言检查
+    testCheck(g_actualSpeed >= 0, "速度应为正值");
+    testCheck(g_actualSpeed <= 200, "速度不应超过200");
+    testCheck(g_actualSpeed > 50, "速度应大于50(车辆行驶)");
+    
+    testStepPass("速度验证通过");
+}`
+            },
+            {
+                id: 10, title: 'SecOC报文认证', difficulty: 'hard', level: '专家', freq: 'low',
+                desc: '实现简化的SecOC安全报文：计算MAC、验证新鲜值( Freshness Counter )。',
+                hint: '// MAC = CRC/Hash(数据+新鲜值)\n// 接收方验证MAC',
+                input: 'SecOC报文: Data + MAC(4B) + FV(4B)',
+                output: '认证成功/失败',
+                usage: '🔒 安全通信测试',
+                template: `variables {
+    message 0x700 SecOCMsg;
+    dword FreshnessCounter = 0;
+    dword ExpectedMAC;
+}
+
+// 发送端: 计算并附加MAC
+on key 's' {
+    byte data[4];
+    data[0] = 0x12; // 实际数据
+    data[1] = 0x34;
+    
+    // TODO: 计算MAC (简化: 异或校验)
+    dword mac = data[0] ^ (data[1] << 8) ^ (FreshnessCounter & 0xFFFF);
+    
+    // TODO: 构造SecOC报文
+    // SecOCMsg.byte(0) = data[0];
+    // SecOCMsg.byte(1) = data[1];
+    // SecOCMsg.byte(2) = (mac >> 24) & 0xFF;
+    // SecOCMsg.byte(3) = (mac >> 16) & 0xFF;
+    // SecOCMsg.byte(4) = FreshnessCounter & 0xFF;
+    // SecOCMsg.byte(5) = (FreshnessCounter >> 8) & 0xFF;
+    
+    output(SecOCMsg);
+    FreshnessCounter++;
+}
+
+// 接收端: 验证MAC
+on message 0x700 {
+    // TODO: 提取数据、MAC、新鲜值
+    // TODO: 重新计算MAC并比对
+    // TODO: 验证新鲜值递增
+    
+    write("SecOC验证: %s", verified ? "通过" : "失败");
+}`
+            }
+        ];
+
+        let currentProblem = 0;
+        const editor = document.getElementById('codeEditor');
+        if (editor) {
+            editor.value = problems[0].template;
+        }
+
+        function selectProblem(index) {
+            currentProblem = index;
+            const prob = problems[index];
+            
+            // 更新题目列表 - 移除所有active类再添加
+            document.querySelectorAll('.problem-item').forEach((item, i) => {
+                item.classList.remove('active', 'high-active', 'medium-active', 'low-active');
+                if (i === index) {
+                    item.classList.add('active');
+                    if (prob.freq === 'high') item.classList.add('high-active');
+                    else if (prob.freq === 'medium') item.classList.add('medium-active');
+                    else item.classList.add('low-active');
+                }
+            });
+            
+            // 频率标签
+            const freqClass = prob.freq === 'high' ? 'high' : prob.freq === 'medium' ? 'medium' : 'low';
+            const freqText = prob.freq === 'high' ? '🔥 高频' : prob.freq === 'medium' ? '📈 中频' : '🔧 低频';
+            
+            // 更新题目描述
+            const descEl = document.getElementById('problemDesc');
+            descEl.innerHTML = `
+                <h3>P${prob.id} - ${prob.title} <span class="diff ${prob.difficulty === 'medium' ? 'medium' : prob.difficulty === 'hard' ? 'hard' : ''}">${prob.level}</span> <span class="freq-tag ${freqClass}">${freqText}</span></h3>
+                <p style="color:#8b949e;font-size:0.88em;margin-bottom:8px;">${prob.desc}</p>
+                <pre>${prob.hint}</pre>
+                <div class="io">
+                    <div class="io-box">
+                        <h5>📥 输入</h5>
+                        <code>${prob.input}</code>
+                    </div>
+                    <div class="io-box">
+                        <h5>📤 输出</h5>
+                        <code>${prob.output}</code>
+                    </div>
+                </div>
+                <div class="usage-tip">💡 ${prob.usage}</div>
+            `;
+            
+            // 更新代码编辑器
+            if (editor) editor.value = prob.template;
+            
+            // 重置结果
+            document.getElementById('ojResult').innerHTML = '<h4>📋 运行结果</h4><div class="test-case pending">点击"运行"开始评测...</div>';
+        }
+
+        async function runCode() {
+            const resultEl = document.getElementById('ojResult');
+            resultEl.innerHTML = '<h4>📋 运行结果</h4>';
+            
+            const prob = problems[currentProblem];
+            const testCases = prob.difficulty === 'hard' ? 3 : 4;
+            
+            for (let i = 0; i < testCases; i++) {
+                const testEl = document.createElement('div');
+                testEl.className = 'test-case running';
+                testEl.textContent = `测试用例 ${i + 1}: 运行中...`;
+                resultEl.appendChild(testEl);
+                
+                await new Promise(r => setTimeout(r, 300 + Math.random() * 200));
+                
+                const passed = Math.random() > (prob.difficulty === 'hard' ? 0.4 : 0.2);
+                testEl.className = 'test-case ' + (passed ? 'pass' : 'fail');
+                testEl.textContent = `测试用例 ${i + 1}: ${passed ? '✓ 通过' : '✗ 失败'}`;
+            }
+            
+            const passedCount = resultEl.querySelectorAll('.test-case.pass').length;
+            const totalEl = document.createElement('div');
+            totalEl.style.cssText = 'margin-top:10px;padding:10px;border-radius:6px;text-align:center;';
+            totalEl.style.background = passedCount === testCases ? 'rgba(35,134,54,0.3)' : 'rgba(245,158,11,0.3)';
+            totalEl.style.color = passedCount === testCases ? '#238636' : '#f59e0b';
+            totalEl.textContent = `总计: ${passedCount}/${testCases} 通过`;
+            resultEl.appendChild(totalEl);
+        }
+
+        function resetCode() {
+            if (editor) editor.value = problems[currentProblem].template;
+            document.getElementById('ojResult').innerHTML = '<h4>📋 运行结果</h4><div class="test-case pending">点击"运行"开始评测...</div>';
+        }
+
+        function submitCode() {
+            runCode();
+            alert('代码已提交！\n\n实际项目中需要连接后端服务进行真实评测。');
         }
     </script>
 </body>

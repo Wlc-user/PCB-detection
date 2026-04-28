@@ -1,0 +1,77 @@
+{
+  "tcp": {
+    "enabled": true,
+    "host": "127.0.0.1",
+    "port": 5000,
+    "timeout": 5,
+    "retry": 3
+  },
+  "serial": {
+    "enabled": false,
+    "port": "COM3",
+    "baudrate": 9600,
+    "bytesize": 8,
+    "parity": "N",
+    "stopbits": 1,
+    "timeout": 1
+  },
+  "modbus": {
+    "slave_id": 1,
+    "start_address": 0,
+    "register_count": 8
+  },
+  "registers": {
+    "0": {
+      "name": "CRANE_ST",
+      "desc": "起重机状态",
+      "unit": ""
+    },
+    "1": {
+      "name": "CONT_POS",
+      "desc": "集装箱位置",
+      "unit": ""
+    },
+    "2": {
+      "name": "TRUCK_CNT",
+      "desc": "卡车数量",
+      "unit": "辆"
+    },
+    "3": {
+      "name": "SHIP_DET",
+      "desc": "船舶检测",
+      "unit": ""
+    },
+    "4": {
+      "name": "ALARM",
+      "desc": "告警标志",
+      "unit": ""
+    },
+    "5": {
+      "name": "SPEED",
+      "desc": "速度",
+      "unit": "km/h"
+    },
+    "6": {
+      "name": "TEMP",
+      "desc": "温度",
+      "unit": "°C"
+    },
+    "7": {
+      "name": "WEIGHT",
+      "desc": "重量",
+      "unit": "kg"
+    }
+  },
+  "alarms": {
+    "temperature_high": 35,
+    "temperature_low": 10,
+    "weight_max": 50000,
+    "speed_max": 120
+  },
+  "poll_interval": 500,
+  "data_log": {
+    "enabled": true,
+    "path": "data_log.csv",
+    "interval": 5
+  }
+}

@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Bootloader 可视化 - 车载ECU升级原理</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        /* 导航栏 */
+        .nav {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand {
+            font-size: 1.3em;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 0.95em;
+        }
+        .nav-links a:hover { color: #00d4ff; }
+        
+        /* 英雄区 */
+        .hero {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background: linear-gradient(180deg, rgba(0,212,255,0.1) 0%, transparent 100%);
+        }
+        .hero h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #fff, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            color: #a0a0a0;
+            font-size: 1.1em;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* 标签切换 */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9em;
+        }
+        .tab:hover { border-color: #00d4ff; }
+        .tab.active {
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border-color: transparent;
+            color: #fff;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 50px;
+        }
+        
+        /* 3D场景区 */
+        .scene-container {
+            display: none;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+        .scene-container.active { display: grid; }
+        
+        /* 3D画布 */
+        .canvas-wrapper {
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            height: 500px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 语义标注层 */
+        .semantic-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .semantic-tag {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.85em;
+            border-left: 3px solid;
+            max-width: 180px;
+        }
+        .tag-red { border-color: #ef4444; }
+        .tag-blue { border-color: #3b82f6; }
+        .tag-green { border-color: #10b981; }
+        .tag-yellow { border-color: #f59e0b; }
+        .tag-purple { border-color: #8b5cf6; }
+        
+        /* 信息面板 */
+        .info-panel {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .panel-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .panel-title .icon { font-size: 1.5em; }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        .info-section h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-section p, .info-section li {
+            color: #b0b0b0;
+            font-size: 0.9em;
+            line-height: 1.7;
+        }
+        .info-section ul {
+            list-style: none;
+            padding-left: 5px;
+        }
+        .info-section li {
+            padding: 6px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+        .info-section li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #7c3aed;
+        }
+        
+        /* 代码块 */
+        .code-block {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8em;
+            overflow-x: auto;
+            border: 1px solid #30363d;
+        }
+        .code-block .comment { color: #8b949e; }
+        .code-block .keyword { color: #ff7b72; }
+        .code-block .string { color: #a5d6ff; }
+        .code-block .number { color: #79c0ff; }
+        .code-block .function { color: #d2a8ff; }
+        
+        /* 流程图 */
+        .flow-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(124,58,237,0.2));
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: 10px;
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 100px;
+        }
+        .flow-step .step-num {
+            font-size: 0.7em;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        .flow-step .step-name {
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .flow-arrow {
+            color: #00d4ff;
+            font-size: 1.5em;
+        }
+        
+        /* 原理说明卡片 */
+        .principle-card {
+            background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(0,212,255,0.1));
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .principle-card h4 {
+            color: #7c3aed;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 分区可视化 */
+        .memory-map {
+            background: rgba(0,0,0,0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .memory-bar {
+            display: flex;
+            height: 50px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .mem-block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .mem-boot { background: linear-gradient(90deg, #ef4444, #f97316); flex: 0.15; }
+        .mem-app { background: linear-gradient(90deg, #10b981, #06b6d4); flex: 0.6; }
+        .mem-data { background: linear-gradient(90deg, #8b5cf6, #ec4899); flex: 0.25; }
+        
+        .mem-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75em;
+            color: #888;
+        }
+        
+        /* 状态动画 */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(16,185,129,0.2);
+            border-radius: 20px;
+            margin: 10px 0;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        /* 对比表格 */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.85em;
+        }
+        .compare-table th, .compare-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .compare-table th {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        .compare-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        
+        /* 底部总结 */
+        .summary-section {
+            margin-top: 50px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .summary-section h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .summary-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 4px solid;
+        }
+        .summary-card.blue { border-color: #3b82f6; }
+        .summary-card.green { border-color: #10b981; }
+        .summary-card.purple { border-color: #8b5cf6; }
+        .summary-card.orange { border-color: #f97316; }
+        .summary-card h3 {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .summary-card p {
+            color: #a0a0a0;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* 交互提示 */
+        .interaction-hint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        /* 动画按钮 */
+        .anim-btn {
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        .anim-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,212,255,0.3);
+        }
+        
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .scene-container {
+                grid-template-columns: 1fr;
+            }
+            .canvas-wrapper {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 面包屑 -->
+    <div style="background:rgba(0,0,0,0.2);padding:10px 40px;font-size:0.8em;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <a href="index.html" style="color:#00d4ff;text-decoration:none;">首页</a>
+        <span style="color:#666;">›</span>
+        <a href="knowledge-graph.html" style="color:#00d4ff;text-decoration:none;">知识图谱</a>
+        <span style="color:#666;">›</span>
+        <span style="color:#fff;">阶段四 · 高级进阶</span>
+        <span style="color:#666;">›</span>
+        <span style="color:#f97316;">⚡ Bootloader</span>
+    </div>
+    
+    <!-- 导航 -->
+    <nav class="nav">
+        <div class="nav-brand">🚀 AutoTest Academy</div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="knowledge-graph.html" style="color:#3b82f6;">📚 知识图谱</a>
+            <a href="3d_scenes.html">3D场景</a>
+            <a href="pricing.html">☕ 支持</a>
+        </div>
+    </nav>
+    
+    <!-- 英雄区 -->
+    <div class="hero">
+        <h1>⚡ Flash Bootloader 可视化</h1>
+        <p>深入理解 ECU 刷写原理 — 汽车的"系统重装"是怎么工作的？</p>
+    </div>
+    
+    <!-- 标签切换 -->
+    <div class="tabs">
+        <div class="tab active" data-scene="concept">💡 核心概念</div>
+        <div class="tab" data-scene="memory">🧠 内存分区</div>
+        <div class="tab" data-scene="process">🔄 刷写流程</div>
+        <div class="tab" data-scene="uds">📡 UDS协议</div>
+        <div class="tab" data-scene="compare">⚖️ 对比学习</div>
+    </div>
+    
+    <div class="container">
+        <!-- 场景1: 核心概念 -->
+        <div class="scene-container active" id="scene-concept">
+            <div class="canvas-wrapper">
+                <canvas id="canvas3d"></canvas>
+                <div class="semantic-layer">
+                    <div class="semantic-tag tag-red" style="top:20px;left:20px;">
+                        <strong>🔴 Bootloader区</strong><br>
+                        <small>固化程序，永不删除<br>就像BIOS一样</small>
+                    </div>
+                    <div class="semantic-tag tag-green" style="top:20px;right:20px;">
+                        <strong>🟢 应用程序区</strong><br>
+                        <small>可以被更新替换<br>这就是刷写目标</small>
+                    </div>
+                    <div class="semantic-tag tag-purple" style="bottom:60px;left:20px;">
+                        <strong>🟣 数据区</strong><br>
+                        <small>标定参数/VIN码<br>生产时写入</small>
+                    </div>
+                    <div class="semantic-tag tag-yellow" style="bottom:60px;right:20px;">
+                        <strong>🟡 OTA远程</strong><br>
+                        <small>4G/WiFi接收升级包<br>车厂后台推送</small>
+                    </div>
+                </div>
+                <div class="interaction-hint">🖱️ 拖拽旋转 | 滚轮缩放</div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="panel-title">
+                    <span class="icon">💡</span>
+                    <span>Bootloader 是什么？</span>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🔑 一句话解释</h4>
+                    <p><strong style="color:#00d4ff">Bootloader = 汽车的"重装系统工具"</strong></p>
+                    <p style="margin-top:10px;">
+                        就像电脑的 BIOS + 重装系统，Bootloader 让 ECU 可以在不拆芯片的情况下更新程序。
+                    </p>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🎯 三大作用</h4>
+                    <ul>
+                        <li><strong>程序更新</strong> — 远程OTA升级，不需要进4S店</li>
+                        <li><strong>数据校准</strong> — 写入标定参数（油耗Map、点火角等）</li>
+                        <li><strong>故障恢复</strong> — 刷成砖了还能救回来</li>
+                    </ul>
+                </div>
+                
+                <div class="principle-card">
+                    <h4>💭 核心原理</h4>
+                    <p>ECU 启动时先运行 Bootloader，它检查：</p>
+                    <ul style="margin-top:10px;">
+                        <li>是否有升级请求？（诊断仪发 0x10 切换模式）</li>
+                        <li>应用程序是否完整？（CRC校验）</li>
+                        <li>版本是否匹配？（兼容性检查）</li>
+                    </ul>
+                    <p style="margin-top:10px;">全部OK就跳转到 App 区运行，否则留在 Bootloader 等待刷写。</p>
+                </div>
+                
+                <button class="anim-btn" onclick="animateBootFlow()">▶ 播放启动流程动画</button>
+            </div>
+        </div>
+        
+        <!-- 场景2: 内存分区 -->
+        <div class="scene-container" id="scene-memory">
+            <div class="canvas-wrapper" style="background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);">
+                <div style="padding:30px;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                    <!-- 芯片外观3D -->
+                    <div id="chip3d" style="width:300px;height:200px;position:relative;margin-bottom:30px;">
+                        <div style="position:absolute;width:100%;height:100%;background:linear-gradient(135deg,#2d2d2d,#1a1a1a);border-radius:15px;border:3px solid #444;display:flex;flex-direction:column;overflow:hidden;">
+                            <!-- 芯片引脚 -->
+                            <div style="display:flex;justify-content:space-around;padding:8px 15px;background:#333;">
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                            </div>
+                            <!-- 芯片内部 -->
+                            <div style="flex:1;display:flex;">
+                                <div style="width:60px;background:#222;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;">
+                                    <span style="color:#666;font-size:0.7em;letter-spacing:3px;">MCU</span>
+                                </div>
+                                <div style="flex:1;display:flex;flex-direction:column;">
+                                    <!-- 分区 -->
+                                    <div style="flex:0.15;background:linear-gradient(90deg,#ef4444,#f97316);display:flex;align-items:center;justify-content:center;font-size:0.75em;font-weight:bold;">
+                                        🔴 Bootloader 15%
+                                    </div>
+                                    <div style="flex:0.55;background:linear-gradient(90deg,#10b981,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:0.8em;font-weight:bold;">
+                                        🟢 应用程序 60%
+                                    </div>
+                                    <div style="flex:0.3;background:linear-gradient(90deg,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:bold;">
+                                        🟣 数据区 25%
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex;justify-content:space-around;padding:8px 15px;background:#333;">
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                                <span style="width:8px;height:20px;background:#c0c0c0;border-radius:2px;"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 内存地址条 -->
+                    <div class="memory-map" style="width:100%;max-width:500px;">
+                        <div style="text-align:center;margin-bottom:10px;color:#888;font-size:0.85em;">📍 内存地址映射</div>
+                        <div class="memory-bar">
+                            <div class="mem-block mem-boot">0x0000</div>
+                            <div class="mem-block mem-app">0x2400</div>
+                            <div class="mem-block mem-data">0xC000</div>
+                        </div>
+                        <div class="mem-labels">
+                            <span>起始地址</span>
+                            <span>APP起始</span>
+                            <span>Flash结束</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="panel-title">
+                    <span class="icon">🧠</span>
+                    <span>ECU 内存分区</span>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🏗️ 为什么分区？</h4>
+                    <p>就像电脑分区 C盘/D盘，ECU Flash 也需要分区：</p>
+                    <ul>
+                        <li><strong>安全隔离</strong> — Bootloader 不能被误删</li>
+                        <li><strong>独立更新</strong> — App 可以单独刷写</li>
+                        <li><strong>数据保护</strong> — 标定数据单独存放</li>
+                    </ul>
+                </div>
+                
+                <div class="code-block">
+<span class="comment">/* Flash 分区配置示例 */</span>
+<span class="keyword">const</span> <span class="function">FlashLayout</span> = {
+  <span class="string">"Bootloader"</span>: { <span class="string">"start"</span>: <span class="number">0x0000</span>, <span class="string">"size"</span>: <span class="number">0x2400</span> },
+  <span class="string">"Application"</span>: { <span class="string">"start"</span>: <span class="number">0x2400</span>, <span class="string">"size"</span>: <span class="number">0x9C00</span> },
+  <span class="string">"Data"</span>:        { <span class="string">"start"</span>: <span class="number">0xC000</span>, <span class="string">"size"</span>: <span class="number">0x4000</span> }
+};
+                </div>
+                
+                <div class="info-section">
+                    <h4>📊 典型分区比例</h4>
+                    <table class="compare-table">
+                        <tr><th>区域</th><th>占比</th><th>大小(512KB)</th></tr>
+                        <tr><td>🔴 Bootloader</td><td>10-15%</td><td>~64KB</td></tr>
+                        <tr><td>🟢 Application</td><td>60-70%</td><td>~350KB</td></tr>
+                        <tr><td>🟣 Data/Calib</td><td>20-25%</td><td>~100KB</td></tr>
+                    </table>
+                </div>
+                
+                <div class="principle-card">
+                    <h4>🔐 安全机制</h4>
+                    <p>分区隔离 + 写入保护：</p>
+                    <ul>
+                        <li>Bootloader 区设置读/写保护</li>
+                        <li>刷写时先验证签名</li>
+                        <li>CRC校验确保完整性</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 场景3: 刷写流程 -->
+        <div class="scene-container" id="scene-process">
+            <div class="canvas-wrapper" style="background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);padding:30px;">
+                <div style="height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                    <!-- 流程动画区 -->
+                    <div id="processFlow" style="width:100%;max-width:700px;">
+                        <!-- 步骤1 -->
+                        <div class="flow-step" id="step1" style="opacity:0.3;transform:scale(0.9);">
+                            <div class="step-num">STEP 1</div>
+                            <div class="step-name">🔌 诊断仪连接</div>
+                            <div style="font-size:0.8em;color:#888;margin-top:8px;">发送 0x10 03<br>进入扩展会话</div>
+                        </div>
+                        
+                        <div class="flow-arrow" style="opacity:0.3;">↓</div>
+                        
+                        <!-- 步骤2 -->
+                        <div class="flow-step" id="step2" style="opacity:0.3;transform:scale(0.9);">
+                            <div class="step-num">STEP 2</div>
+                            <div class="step-name">🔐 安全解锁</div>
+                            <div style="font-size:0.8em;color:#888;margin-top:8px;">0x27 05/06<br>请求种子→发送密钥</div>
+                        </div>
+                        
+                        <div class="flow-arrow" style="opacity:0.3;">↓</div>
+                        
+                        <!-- 步骤3 -->
+                        <div class="flow-step" id="step3" style="opacity:0.3;transform:scale(0.9);">
+                            <div class="step-num">STEP 3</div>
+                            <div class="step-name">💾 请求下载</div>
+                            <div style="font-size:0.8em;color:#888;margin-top:8px;">0x34<br>指定地址+大小</div>
+                        </div>
+                        
+                        <div class="flow-arrow" style="opacity:0.3;">↓</div>
+                        
+                        <!-- 步骤4 -->
+                        <div class="flow-step" id="step4" style="opacity:0.3;transform:scale(0.9);">
+                            <div class="step-num">STEP 4</div>
+                            <div class="step-name">📤 传输数据</div>
+                            <div style="font-size:0.8em;color:#888;margin-top:8px;">0x36 + 0x37<br>分块传输+块校验</div>
+                        </div>
+                        
+                        <div class="flow-arrow" style="opacity:0.3;">↓</div>
+                        
+                        <!-- 步骤5 -->
+                        <div class="flow-step" id="step5" style="opacity:0.3;transform:scale(0.9);">
+                            <div class="step-num">STEP 5</div>
+                            <div class="step-name">✅ 验证完成</div>
+                            <div style="font-size:0.8em;color:#888;margin-top:8px;">0x37 + 0x31<br>退出传输+例程检查</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 进度条 -->
+                    <div style="width:100%;max-width:400px;margin-top:30px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                            <span style="font-size:0.85em;color:#888;">刷写进度</span>
+                            <span id="progressPercent" style="font-size:0.85em;color:#00d4ff;">0%</span>
+                        </div>
+                        <div style="height:8px;background:#333;border-radius:4px;overflow:hidden;">
+                            <div id="progressBar" style="width:0%;height:100%;background:linear-gradient(90deg,#00d4ff,#7c3aed);transition:width 0.3s;border-radius:4px;"></div>
+                        </div>
+                    </div>
+                    
+                    <button class="anim-btn" onclick="animateProcess()">▶ 播放刷写动画</button>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="panel-title">
+                    <span class="icon">🔄</span>
+                    <span>完整刷写流程</span>
+                </div>
+                
+                <div class="info-section">
+                    <h4>📋 10步标准流程</h4>
+                    <ol style="list-style:none;padding:0;">
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#00d4ff;">1.</strong> 0x10 03 — 进入扩展会话
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#00d4ff;">2.</strong> 0x3E 80 — 保持会话心跳
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#00d4ff;">3.</strong> 0x27 01/03 — 请求安全种子
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#00d4ff;">4.</strong> 0x27 02/04 — 发送密钥解锁
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#00d4ff;">5.</strong> 0x31 01 02 — 擦除内存例程
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#10b981;">6.</strong> 0x34 — 请求下载（地址+大小）
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#10b981;">7.</strong> 0x36 — 传输数据块（循环）
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#10b981;">8.</strong> 0x37 — 传输完成请求
+                        </li>
+                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <strong style="color:#7c3aed;">9.</strong> 0x31 02 02 — CRC校验例程
+                        </li>
+                        <li style="padding:8px 0;">
+                            <strong style="color:#7c3aed;">10.</strong> 0x11 01 — 硬复位 ECU
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="principle-card">
+                    <h4>⏱️ 典型耗时</h4>
+                    <table class="compare-table">
+                        <tr><th>文件大小</th><th>CAN 500K</th><th>CAN FD</th></tr>
+                        <tr><td>256KB</td><td>~45秒</td><td>~8秒</td></tr>
+                        <tr><td>512KB</td><td>~90秒</td><td>~15秒</td></tr>
+                        <tr><td>2MB</td><td>~6分钟</td><td>~1分钟</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 场景4: UDS协议 -->
+        <div class="scene-container" id="scene-uds">
+            <div class="canvas-wrapper">
+                <canvas id="canvasUds"></canvas>
+                <div class="semantic-layer">
+                    <div class="semantic-tag tag-blue" style="top:20px;left:20px;">
+                        <strong>🔵 诊断仪</strong><br>
+                        <small>PC+CAN卡<br>VCI/ VAS6154</small>
+                    </div>
+                    <div class="semantic-tag tag-green" style="top:20px;right:20px;">
+                        <strong>🟢 ECU</strong><br>
+                        <small>目标控制器<br>发动机/VCU</small>
+                    </div>
+                    <div class="semantic-tag tag-yellow" style="bottom:60px;left:50%;transform:translateX(-50%);">
+                        <strong>🟡 CAN总线</strong><br>
+                        <small>11位标准ID<br>29位扩展ID</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="panel-title">
+                    <span class="icon">📡</span>
+                    <span>UDS 诊断协议</span>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🔤 UDS = 统一诊断服务</h4>
+                    <p>ISO 14229 标准，定义了一套"问答题"：</p>
+                    <div class="code-block">
+<span class="comment">/* 标准UDS请求格式 */</span>
+<span class="function">CAN Frame</span>: [
+  <span class="number">ID</span>: 0x7E0,        <span class="comment">// ECU物理寻址</span>
+  <span class="number">DLC</span>: <span class="number">8</span>,
+  <span class="number">Data</span>: [
+    <span class="number">0x34</span>,        <span class="comment">// 服务ID: 请求下载</span>
+    <span class="number">0x00</span>,        <span class="comment">// 数据格式标识</span>
+    <span class="number">0x44</span>,        <span class="comment">// 地址/长度格式</span>
+    <span class="number">0x00</span><span class="number">0xx2400</span>,  <span class="comment">// 内存起始地址</span>
+    <span class="number">0x00</span><span class="number">0x8000</span>,  <span class="comment">// 内存大小</span>
+    <span class="number">0x00</span>, <span class="number">0x00</span>
+  ]
+]
+                </div>
+                <div class="code-block">
+<span class="comment">/* 标准UDS响应格式 */</span>
+<span class="function">CAN Frame</span>: [
+  <span class="number">ID</span>: <span class="number">0x7E8</span>,        <span class="comment">// ECU响应ID</span>
+  <span class="number">DLC</span>: <span class="number">8</span>,
+  <span class="number">Data</span>: [
+    <span class="number">0x74</span>,        <span class="comment">// 0x34+0x40 = 肯定响应</span>
+    <span class="number">0x20</span>,        <span class="comment">// 块大小(32)</span>
+    <span class="number">0x00</span>,        <span class="comment">// 块编号</span>
+    ...
+  ]
+]
+                </div>
+                <div class="info-section">
+                    <h4>📊 核心服务速查</h4>
+                    <table class="compare-table">
+                        <tr><th>服务</th><th>ID</th><th>功能</th></tr>
+                        <tr><td>诊断会话</td><td>0x10</td><td>切换会话模式</td></tr>
+                        <tr><td>清除故障</td><td>0x14</td><td>清除DTC</td></tr>
+                        <tr><td>读取数据</td><td>0x22</td><td>读PID/DID</td></tr>
+                        <tr><td>写入数据</td><td>0x2E</td><td>写VIN/配置</td></tr>
+                        <tr><td>请求下载</td><td>0x34</td><td>开始刷写</td></tr>
+                        <tr><td>传输数据</td><td>0x36</td><td>发送数据块</td></tr>
+                        <tr><td>请求退出</td><td>0x37</td><td>刷写完成</td></tr>
+                        <tr><td>例程控制</td><td>0x31</td><td>擦除/校验</td></tr>
+                    </table>
+                </div>
+                
+                <div class="principle-card">
+                    <h4>🔐 安全访问 (0x27)</h4>
+                    <p>ECU 安全性等级很高，需要"解锁"才能刷写：</p>
+                    <div class="flow-chart" style="margin-top:15px;padding:15px;">
+                        <div class="flow-step" style="min-width:80px;padding:10px;">
+                            <div class="step-num">请求</div>
+                            <div class="step-name">27 01</div>
+                        </div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step" style="min-width:80px;padding:10px;">
+                            <div class="step-num">返回</div>
+                            <div class="step-name">67 01 XX</div>
+                        </div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step" style="min-width:80px;padding:10px;">
+                            <div class="step-num">验证</div>
+                            <div class="step-name">27 02 YY</div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.8em;color:#888;margin-top:10px;">XX = 种子(seed), YY = 密钥(key) = f(种子, 算法)</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 场景5: 对比学习 -->
+        <div class="scene-container" id="scene-compare">
+            <div class="canvas-wrapper" style="background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);padding:30px;">
+                <div style="height:100%;display:flex;flex-direction:column;justify-content:center;">
+                    <!-- OTA vs 诊断仪 -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;max-width:800px;margin:0 auto;">
+                        <div style="background:rgba(239,68,68,0.1);border:2px solid rgba(239,68,68,0.3);border-radius:15px;padding:25px;text-align:center;">
+                            <div style="font-size:3em;margin-bottom:15px;">📱</div>
+                            <h3 style="color:#ef4444;margin-bottom:10px;">OTA 远程升级</h3>
+                            <div style="font-size:0.85em;color:#aaa;line-height:1.8;">
+                                <p>🌐 4G/WiFi 网络</p>
+                                <p>📦 云端升级包</p>
+                                <p>🔒 签名验证</p>
+                                <p>⏰ 静默升级</p>
+                            </div>
+                            <div style="margin-top:15px;padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:0.8em;">
+                                <strong>典型工具:</strong> OneNET, AWS IoT, Azure IoT Hub
+                            </div>
+                        </div>
+                        
+                        <div style="background:rgba(16,185,129,0.1);border:2px solid rgba(16,185,129,0.3);border-radius:15px;padding:25px;text-align:center;">
+                            <div style="font-size:3em;margin-bottom:15px;">🔧</div>
+                            <h3 style="color:#10b981;margin-bottom:10px;">诊断仪本地刷写</h3>
+                            <div style="font-size:0.85em;color:#aaa;line-height:1.8;">
+                                <p>💻 PC + CAN卡</p>
+                                <p>📋 Vector工具链</p>
+                                <p>🎯 精确控制</p>
+                                <p>🔍 实时调试</p>
+                            </div>
+                            <div style="margin-top:15px;padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:0.8em;">
+                                <strong>典型工具:</strong> CANoe, PCAN, VAS6154
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 总线对比 -->
+                    <div style="margin-top:30px;background:rgba(0,0,0,0.3);border-radius:15px;padding:25px;">
+                        <h4 style="text-align:center;margin-bottom:20px;color:#00d4ff;">🔌 总线技术对比</h4>
+                        <table class="compare-table">
+                            <tr><th>总线</th><th>速率</th><th>典型应用</th><th>刷写速度</th></tr>
+                            <tr><td>CAN 2.0</td><td>500Kbps</td><td>入门级ECU</td><td>慢 (~90s/512KB)</td></tr>
+                            <tr><td>CAN FD</td><td>2-8Mbps</td><td>域控制器</td><td>快 (~15s/512KB)</td></tr>
+                            <tr><td>Ethernet</td><td>100Mbps+</td><td>高性能ECU</td><td>极快 (~2s/512KB)</td></tr>
+                            <tr><td>LIN</td><td>20Kbps</td><td>智能传感器</td><td>很慢 (很少刷写)</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="panel-title">
+                    <span class="icon">⚖️</span>
+                    <span>对比学习</span>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🔄 Bootloader vs App</h4>
+                    <table class="compare-table">
+                        <tr><th>对比项</th><th>Bootloader</th><th>Application</th></tr>
+                        <tr><td>位置</td><td>Flash 起始区</td><td>Bootloader 之后</td></tr>
+                        <tr><td>大小</td><td>较小 (32-128KB)</td><td>较大 (256KB-2MB)</td></tr>
+                        <tr><td>更新频率</td><td>几乎不更新</td><td>可能频繁更新</td></tr>
+                        <tr><td>功能</td><td>升级引导</td><td>业务逻辑</td></tr>
+                        <tr><td>入口</td><td>上电首先运行</td><td>Bootloader跳转</td></tr>
+                    </table>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🌐 OTA vs 诊断刷写</h4>
+                    <table class="compare-table">
+                        <tr><th>维度</th><th>OTA</th><th>诊断仪</th></tr>
+                        <tr><td>场景</td><td>车主远程升级</td><td>4S店/产线</td></tr>
+                        <tr><td>触发</td><td>云端推送</td><td>人工操作</td></tr>
+                        <tr><td>安全性</td><td>更高 (多重验证)</td><td>较高 (物理接触)</td></tr>
+                        <tr><td>灵活性</td><td>批量/定向</td><td>单台/精确</td></tr>
+                        <tr><td>成本</td><td>流量费</td><td>设备费</td></tr>
+                    </table>
+                </div>
+                
+                <div class="principle-card">
+                    <h4>💡 测试要点</h4>
+                    <ul>
+                        <li><strong>刷写过程中断</strong> — 断电/拔CAN线，ECU能否恢复？</li>
+                        <li><strong>版本兼容性</strong> — 旧Bootloader能刷新版App吗？</li>
+                        <li><strong>签名验证</strong> — 伪造的升级包能否被拒绝？</li>
+                        <li><strong>会话超时</strong> — 刷写到一半超时怎么办？</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部总结 -->
+    <div class="container">
+        <div class="summary-section">
+            <h2>📚 Bootloader 知识总结</h2>
+            <div class="summary-grid">
+                <div class="summary-card blue">
+                    <h3>🔑 核心概念</h3>
+                    <p>Bootloader 是 ECU 的"重装系统工具"，固化在 Flash 起始区域，负责应用程序的升级更新。</p>
+                </div>
+                <div class="summary-card green">
+                    <h3>🔐 安全机制</h3>
+                    <p>签名验证 + 安全解锁(0x27) + CRC校验 + 分区保护，确保只有合法固件才能被写入。</p>
+                </div>
+                <div class="summary-card purple">
+                    <h3>📡 UDS协议</h3>
+                    <p>0x34/0x36/0x37 三步完成刷写，配合 0x10 会话控制、0x27 安全访问、0x31 例程控制。</p>
+                </div>
+                <div class="summary-card orange">
+                    <h3>🧪 测试重点</h3>
+                    <p>刷写中断恢复、版本兼容性、签名伪造抵抗、会话超时处理是四大核心测试场景。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============ Three.js 3D 场景 ============
+        let scene, camera, renderer;
+        let animationId;
+        
+        function init3D() {
+            const canvas = document.getElementById('canvas3d');
+            if (!canvas) return;
+            
+            // 场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            
+            // 相机
+            camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            camera.position.set(5, 4, 6);
+            camera.lookAt(0, 0, 0);
+            
+            // 渲染器
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // 光照
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambient);
+            
+            const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+            directional.position.set(5, 5, 5);
+            scene.add(directional);
+            
+            // 创建内存分区方块
+            createMemoryBlocks();
+            
+            // 鼠标控制
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaMove = {
+                    x: e.clientX - previousMousePosition.x,
+                    y: e.clientY - previousMousePosition.y
+                };
+                
+                scene.rotation.y += deltaMove.x * 0.01;
+                scene.rotation.x += deltaMove.y * 0.01;
+                
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            canvas.addEventListener('mouseup', () => isDragging = false);
+            canvas.addEventListener('mouseleave', () => isDragging = false);
+            
+            canvas.addEventListener('wheel', (e) => {
+                camera.position.z += e.deltaY * 0.01;
+                camera.position.z = Math.max(3, Math.min(15, camera.position.z));
+            });
+            
+            // 动画循环
+            animate();
+        }
+        
+        function createMemoryBlocks() {
+            // Bootloader 区 (红色)
+            const bootGeo = new THREE.BoxGeometry(2, 0.8, 1.5);
+            const bootMat = new THREE.MeshPhongMaterial({ 
+                color: 0xef4444,
+                emissive: 0x330000
+            });
+            const bootMesh = new THREE.Mesh(bootGeo, bootMat);
+            bootMesh.position.x = -2;
+            bootMesh.userData = { name: 'Bootloader', color: '#ef4444' };
+            scene.add(bootMesh);
+            
+            // Application 区 (绿色)
+            const appGeo = new THREE.BoxGeometry(3.5, 0.8, 1.5);
+            const appMat = new THREE.MeshPhongMaterial({ 
+                color: 0x10b981,
+                emissive: 0x003300
+            });
+            const appMesh = new THREE.Mesh(appGeo, appMat);
+            appMesh.position.x = 1;
+            appMesh.userData = { name: 'Application', color: '#10b981' };
+            scene.add(appMesh);
+            
+            // Data 区 (紫色)
+            const dataGeo = new THREE.BoxGeometry(1.5, 0.8, 1.5);
+            const dataMat = new THREE.MeshPhongMaterial({ 
+                color: 0x8b5cf6,
+                emissive: 0x220033
+            });
+            const dataMesh = new THREE.Mesh(dataGeo, dataMat);
+            dataMesh.position.x = 3.5;
+            dataMesh.userData = { name: 'Data', color: '#8b5cf6' };
+            scene.add(dataMesh);
+            
+            // 添加标签
+            addLabel('Bootloader', -2, -0.8, 0xef4444);
+            addLabel('Application', 1, -0.8, 0x10b981);
+            addLabel('Data/Calib', 3.5, -0.8, 0x8b5cf6);
+            
+            // 总线连接线
+            const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-4, 0, 0),
+                new THREE.Vector3(4.5, 0, 0)
+            ]);
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x00d4ff });
+            const line = new THREE.Line(lineGeo, lineMat);
+            line.position.y = -0.3;
+            scene.add(line);
+            
+            // CAN收发器
+            const tranceiverGeo = new THREE.BoxGeometry(0.8, 0.5, 0.6);
+            const tranceiverMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
+            const tranceiver = new THREE.Mesh(tranceiverGeo, tranceiverMat);
+            tranceiver.position.set(0, -1, 0);
+            scene.add(tranceiver);
+        }
+        
+        function addLabel(text, x, y, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'transparent';
+            ctx.fillRect(0, 0, 256, 64);
+            ctx.font = 'bold 24px Microsoft YaHei';
+            ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 128, 40);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.set(x, y, 0);
+            sprite.scale.set(2, 0.5, 1);
+            scene.add(sprite);
+        }
+        
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        
+        // ============ 标签切换 ============
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.querySelectorAll('.scene-container').forEach(s => s.classList.remove('active'));
+                document.getElementById('scene-' + tab.dataset.scene).classList.add('active');
+                
+                // 初始化 UDS 场景的画布
+                if (tab.dataset.scene === 'uds') {
+                    initUdsScene();
+                }
+            });
+        });
+        
+        // ============ 刷写流程动画 ============
+        let processAnimating = false;
+        function animateProcess() {
+            if (processAnimating) return;
+            processAnimating = true;
+            
+            const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            
+            // 重置
+            steps.forEach(id => {
+                const el = document.getElementById(id);
+                el.style.opacity = '0.3';
+                el.style.transform = 'scale(0.9)';
+            });
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
+            
+            // 逐步动画
+            let currentStep = 0;
+            const interval = setInterval(() => {
+                if (currentStep > 0) {
+                    const prev = document.getElementById(steps[currentStep - 1]);
+                    prev.style.opacity = '1';
+                    prev.style.transform = 'scale(1)';
+                }
+                
+                const step = document.getElementById(steps[currentStep]);
+                step.style.opacity = '1';
+                step.style.transform = 'scale(1)';
+                step.style.transition = 'all 0.5s ease';
+                
+                const progress = ((currentStep + 1) / steps.length) * 100;
+                progressBar.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress) + '%';
+                
+                currentStep++;
+                
+                if (currentStep >= steps.length) {
+                    clearInterval(interval);
+                    processAnimating = false;
+                }
+            }, 800);
+        }
+        
+        // ============ Boot 流程动画 ============
+        function animateBootFlow() {
+            alert('Boot 流程动画：\n\n1. ECU 上电\n2. 检查 Boot 标志位\n3. 验证 App CRC\n4. CRC OK → 跳转 App\n5. CRC Fail → 等待刷写');
+        }
+        
+        // ============ UDS 3D 场景 ============
+        function initUdsScene() {
+            const canvas = document.getElementById('canvasUds');
+            if (!canvas || canvas.dataset.initialized) return;
+            canvas.dataset.initialized = 'true';
+            
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            
+            const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            
+            // 诊断仪 (左)
+            const diagGeo = new THREE.BoxGeometry(2, 2.5, 0.3);
+            const diagMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
+            const diag = new THREE.Mesh(diagGeo, diagMat);
+            diag.position.set(-4, 0, 0);
+            scene.add(diag);
+            
+            // PC屏幕
+            const screenGeo = new THREE.BoxGeometry(1.6, 1.2, 0.05);
+            const screenMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const screen = new THREE.Mesh(screenGeo, screenMat);
+            screen.position.set(-4, 0.3, 0.15);
+            scene.add(screen);
+            
+            // CAN卡
+            const canCardGeo = new THREE.BoxGeometry(0.8, 0.4, 0.6);
+            const canCardMat = new THREE.MeshPhongMaterial({ color: 0x10b981 });
+            const canCard = new THREE.Mesh(canCardGeo, canCardMat);
+            canCard.position.set(-4, -1, 0);
+            scene.add(canCard);
+            
+            // CAN线
+            const linePoints = [];
+            for (let i = 0; i <= 20; i++) {
+                const x = -3 + (i / 20) * 6;
+                const y = Math.sin(i * 0.5) * 0.2;
+                linePoints.push(new THREE.Vector3(x, y, 0));
+            }
+            const canLineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
+            const canLineMat = new THREE.LineBasicMaterial({ color: 0xf97316 });
+            const canLine = new THREE.Line(canLineGeo, canLineMat);
+            scene.add(canLine);
+            
+            // ECU (右)
+            const ecuGeo = new THREE.BoxGeometry(2, 2.5, 1.5);
+            const ecuMat = new THREE.MeshPhongMaterial({ color: 0xef4444 });
+            const ecu = new THREE.Mesh(ecuGeo, ecuMat);
+            ecu.position.set(4, 0, 0);
+            scene.add(ecu);
+            
+            // ECU芯片
+            const chipGeo = new THREE.BoxGeometry(1, 0.8, 0.3);
+            const chipMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
+            const chip = new THREE.Mesh(chipGeo, chipMat);
+            chip.position.set(4, 0.3, 0.75);
+            scene.add(chip);
+            
+            // 光照
+            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambient);
+            
+            const directional = new THREE.DirectionalLight(0xffffff, 0.6);
+            directional.position.set(5, 5, 5);
+            scene.add(directional);
+            
+            // 动画
+            let time = 0;
+            function animateUds() {
+                requestAnimationFrame(animateUds);
+                time += 0.05;
+                
+                // CAN线动画
+                const positions = canLine.geometry.attributes.position.array;
+                for (let i = 0; i <= 20; i++) {
+                    positions[i * 3 + 1] = Math.sin(i * 0.5 + time) * 0.2;
+                }
+                canLine.geometry.attributes.position.needsUpdate = true;
+                
+                renderer.render(scene, camera);
+            }
+            animateUds();
+        }
+        
+        // ============ 初始化 ============
+        window.addEventListener('load', () => {
+            init3D();
+            
+            // 窗口调整
+            window.addEventListener('resize', () => {
+                if (renderer && camera) {
+                    const canvas = document.getElementById('canvas3d');
+                    if (canvas) {
+                        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+                        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                        camera.updateProjectionMatrix();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

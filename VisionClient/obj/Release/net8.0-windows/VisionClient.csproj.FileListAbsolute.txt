@@ -1,0 +1,14 @@
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.csproj.AssemblyReference.cache
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\Views\MainWindow.baml
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\Views\SettingsWindow.baml
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\App.baml
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\Views\MainWindow.g.cs
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\Views\SettingsWindow.g.cs
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\App.g.cs
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient_MarkupCompile.cache
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.g.resources
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.GeneratedMSBuildEditorConfig.editorconfig
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.AssemblyInfoInputs.cache
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.AssemblyInfo.cs
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.csproj.CoreCompileInputs.cache
+E:\pyspace\opencv\VisionClient\obj\Release\net8.0-windows\VisionClient.sourcelink.json

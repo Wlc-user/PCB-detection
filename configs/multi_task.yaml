@@ -1,0 +1,78 @@
+# 多任务视觉框架配置
+
+# 默认任务
+default_task: pcb
+
+# 预加载的任务
+preload_tasks:
+  - pcb
+
+# ===========================================
+# PCB 缺陷检测配置 (PyTorch YOLOv8)
+# ===========================================
+pcb:
+  framework: ultralytics
+  model_path: models/yolov8/train/weights/best.pt
+  conf_threshold: 0.25
+  iou_threshold: 0.45
+  imgsz: 640
+  device: 0
+
+# ===========================================
+# 人脸检测配置 (PaddlePaddle)
+# ===========================================
+face:
+  framework: paddle
+  # 模型选项: retinaface / blazeface / scrfd / mediapipe
+  model_name: retinaface
+  model_path: models/paddle/face_detection
+  
+  # 推理配置
+  conf_threshold: 0.5
+  iou_threshold: 0.45
+  
+  # 关键点检测
+  keypoints: true
+  
+  # 回退到OpenCV DNN
+  fallback_opencv: true
+
+# ===========================================
+# OCR识别配置 (PaddleOCR)
+# ===========================================
+ocr:
+  framework: paddle
+  
+  # 语言: ch / en / chie(中文+英文+日韩)
+  lang: ch
+  
+  # 使用角度分类器
+  use_angle_cls: true
+  
+  # 检测模型
+  det_model: DB
+  det_limit_side_len: 960
+  det_limit_type: max
+  
+  # 识别模型  
+  rec_model: SVTR
+  rec_batch_num: 6
+  
+  # 后处理
+  use_space_char: true
+
+# ===========================================
+# 通用配置
+# ===========================================
+common:
+  # 可视化
+  draw_labels: true
+  draw_confidence: true
+  line_thickness: 2
+  
+  # 输出
+  save_visualization: true
+  save_json: true
+  
+  # 性能
+  benchmark: false

@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package vision;
+
+// 视觉检测服务
+service VisionService {
+    // 图像检测
+    rpc Detect (ImageRequest) returns (DetectResponse);
+    
+    // 批量检测
+    rpc DetectBatch (BatchImageRequest) returns (BatchDetectResponse);
+    
+    // 双向流检测 (实时流)
+    rpc DetectStream (stream ImageRequest) returns (stream DetectResponse);
+    
+    // 健康检查
+    rpc Health (HealthRequest) returns (HealthResponse);
+}
+
+// 图像请求
+message ImageRequest {
+    bytes data = 1;           // 图像数据 (JPEG/PNG)
+    float confidence = 2;     // 置信度阈值
+    float iou_threshold = 3; // IoU 阈值
+    string session_id = 4;    // 会话ID
+}
+
+// 批量图像请求
+message BatchImageRequest {
+    repeated bytes images = 1;
+    float confidence = 2;
+    float iou_threshold = 3;
+}
+
+// 图像响应
+message DetectResponse {
+    bool success = 1;
+    string error = 2;
+    repeated Detection detections = 3;
+    int64 process_time_ms = 4;
+    string session_id = 5;
+}
+
+// 批量检测响应
+message BatchDetectResponse {
+    repeated DetectResponse results = 1;
+}
+
+// 检测结果
+message Detection {
+    string class_name = 1;   // 类别名称
+    float confidence = 2;     // 置信度
+    float x = 3;             // 边界框 x
+    float y = 4;             // 边界框 y
+    float width = 5;         // 边界框宽度
+    float height = 6;        // 边界框高度
+}
+
+// 健康检查
+message HealthRequest {}
+
+message HealthResponse {
+    bool healthy = 1;
+    string version = 2;
+    string gpu_available = 3;
+}

@@ -1,0 +1,81 @@
+<Window x:Class="VisionClient.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设置" Height="500" Width="450"
+        Background="{StaticResource DarkBgBrush}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" Text="⚙ 设置" FontSize="20" FontWeight="Bold" 
+                   Foreground="White" Margin="0,0,0,24"/>
+        
+        <!-- 设置项 -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+                <!-- 服务器配置 -->
+                <TextBlock Text="服务器配置" Style="{StaticResource HeaderStyle}" FontSize="14"/>
+                
+                <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="gRPC 地址" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
+                        <TextBox x:Name="GrpcServerBox" Text="localhost:50051" 
+                                 Padding="8" Background="#3F3F46" Foreground="White" 
+                                 BorderThickness="0"/>
+                        
+                        <TextBlock Text="WebSocket 地址" Style="{StaticResource LabelStyle}" 
+                                   Margin="0,12,0,4"/>
+                        <TextBox x:Name="WsServerBox" Text="ws://localhost:8765" 
+                                 Padding="8" Background="#3F3F46" Foreground="White" 
+                                 BorderThickness="0"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- 检测配置 -->
+                <TextBlock Text="检测参数" Style="{StaticResource HeaderStyle}" FontSize="14"/>
+                
+                <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="置信度阈值" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
+                        <Slider x:Name="ConfidenceSlider" Minimum="0.1" Maximum="0.9" 
+                                Value="0.25" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                        
+                        <TextBlock Text="IoU 阈值" Style="{StaticResource LabelStyle}" Margin="0,12,0,4"/>
+                        <Slider x:Name="IoUSlider" Minimum="0.3" Maximum="0.7" 
+                                Value="0.45" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- 显示配置 -->
+                <TextBlock Text="显示选项" Style="{StaticResource HeaderStyle}" FontSize="14"/>
+                
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <CheckBox x:Name="ShowLabelsCheck" Content="显示标签" IsChecked="True" 
+                                  Foreground="White" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="ShowConfidenceCheck" Content="显示置信度" IsChecked="True" 
+                                  Foreground="White" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="DrawBoxesCheck" Content="绘制边框" IsChecked="True" 
+                                  Foreground="White"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- 按钮 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" Margin="0,24,0,0">
+            <Button Content="取消" Padding="24,8" Click="Cancel_Click" 
+                    Background="#555555" Foreground="White" BorderThickness="0"/>
+            <Button Content="保存" Padding="24,8" Margin="8,0,0,0" 
+                    Style="{StaticResource ButtonStyle}" Click="Save_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

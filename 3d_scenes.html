@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 场景可视化 | 车载测试学习</title>
+    <link rel="stylesheet" href="nav-styles.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:linear-gradient(135deg,#0a0a0f,#1a1a2e);min-height:100vh;color:#fff}
+        
+        /* 面包屑 */
+        .breadcrumb{background:rgba(0,0,0,0.3);padding:12px 40px;font-size:0.85em;display:flex;align-items:center;gap:10px}
+        .breadcrumb a{color:#00d4ff;text-decoration:none}
+        .breadcrumb a:hover{text-decoration:underline}
+        .breadcrumb span{color:#666}
+        
+        /* 导航 */
+        .nav{background:rgba(0,0,0,0.3);padding:15px 40px;display:flex;justify-content:space-between;align-items:center}
+        .nav-brand{font-size:1.2em;font-weight:bold}
+        .nav-links{display:flex;gap:25px}
+        .nav-links a{color:#ccc;text-decoration:none;font-size:0.9em}
+        .nav-links a:hover{color:#00d4ff}
+        
+        .container{max-width:1400px;margin:0 auto;padding:30px 20px 50px}
+        h1{font-size:2em;background:linear-gradient(90deg,#00d4ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:10px}
+        .subtitle{text-align:center;color:#8b949e;margin-bottom:25px;font-size:.95em}
+        
+        /* 场景分类筛选 */
+        .filters{display:flex;justify-content:center;gap:12px;margin-bottom:30px;flex-wrap:wrap}
+        .filter-btn{padding:10px 24px;border:1px solid rgba(255,255,255,0.15);border-radius:25px;background:transparent;color:#8b949e;font-size:.9em;cursor:pointer;transition:all .3s}
+        .filter-btn:hover{border-color:#00d4ff;color:#00d4ff}
+        .filter-btn.active{background:linear-gradient(135deg,#00d4ff,#7c3aed);border-color:transparent;color:#fff}
+        
+        /* 场景卡片网格 */
+        .scenes{display:grid;grid-template-columns:repeat(2,1fr);gap:25px}
+        
+        .scene-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;transition:all .3s}
+        .scene-card:hover{border-color:rgba(0,212,255,0.4);transform:translateY(-3px);box-shadow:0 15px 40px rgba(0,212,255,0.1)}
+        
+        /* 卡片头部 */
+        .scene-header{padding:18px 20px;background:rgba(0,212,255,0.05);border-bottom:1px solid rgba(0,212,255,0.1);position:relative}
+        .scene-header::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent,#00d4ff)}
+        .scene-header h3{font-size:1.1em;margin-bottom:6px;color:#fff}
+        .scene-header p{color:#8b949e;font-size:.85em;line-height:1.5}
+        
+        /* 标签 */
+        .tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+        .tag{padding:4px 12px;border-radius:12px;font-size:.75em;background:rgba(0,212,255,0.15);color:#00d4ff}
+        .tag.red{background:rgba(239,68,68,0.15);color:#ef4444}
+        .tag.green{background:rgba(16,185,129,0.15);color:#10b981}
+        .tag.yellow{background:rgba(245,158,11,0.15);color:#f59e0b}
+        .tag.purple{background:rgba(168,85,247,0.15);color:#a855f7}
+        
+        /* 可视化区域 - 响应式 */
+        .viz-container{width:100%;height:320px;background:linear-gradient(180deg,#050510,#0a1520);position:relative;overflow:hidden}
+        
+        /* SVG 动画容器 */
+        .svg-viz{width:100%;height:100%;display:block}
+        
+        /* 语义标注层 */
+        .semantic-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;padding:15px}
+        .sem-label{position:absolute;font-size:.7em;padding:5px 12px;background:rgba(0,0,0,0.85);border-radius:6px;border-left:3px solid;color:#fff;white-space:nowrap;backdrop-filter:blur(4px)}
+        .sem-label.top-left{top:12px;left:12px}
+        .sem-label.top-right{top:12px;right:12px}
+        .sem-label.bottom-left{bottom:12px;left:12px}
+        .sem-label.bottom-right{bottom:12px;right:12px}
+        .sem-label .val{color:#00d4ff;font-weight:600}
+        
+        /* 动画状态 */
+        .anim-badge{position:absolute;top:12px;right:12px;background:rgba(16,185,129,0.9);padding:5px 14px;border-radius:15px;font-size:.75em;display:flex;align-items:center;gap:8px;animation:pulse 2s infinite}
+        .anim-dot{width:8px;height:8px;background:#fff;border-radius:50%;animation:blink 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.8}}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+        
+        /* 底部说明 */
+        .scene-info{background:rgba(0,0,0,0.3);padding:15px 20px;border-top:1px solid rgba(255,255,255,0.05)}
+        .info-row{display:flex;gap:20px;font-size:.85em;color:#8b949e;flex-wrap:wrap}
+        .info-item{display:flex;align-items:center;gap:8px}
+        .info-item strong{color:#00d4ff}
+        .info-item .arrow{color:#10b981}
+        
+        /* 概念总结 */
+        .summary{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:30px;margin-top:40px}
+        .summary h2{font-size:1.3em;text-align:center;margin-bottom:25px;background:linear-gradient(90deg,#00d4ff,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+        .summary-card{background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border-left:3px solid}
+        .summary-card.blue{border-color:#00d4ff}
+        .summary-card.green{border-color:#10b981}
+        .summary-card.yellow{border-color:#f59e0b}
+        .summary-card.purple{border-color:#a855f7}
+        .summary-card h4{margin-bottom:10px;font-size:1em}
+        .summary-card.blue h4{color:#00d4ff}
+        .summary-card.green h4{color:#10b981}
+        .summary-card.yellow h4{color:#f59e0b}
+        .summary-card.purple h4{color:#a855f7}
+        .summary-card p{color:#aaa;font-size:.85em;line-height:1.6}
+        
+        @media(max-width:900px){.scenes{grid-template-columns:1fr}}
+        @media(max-width:600px){
+            .viz-container{height:260px}
+            .breadcrumb,.nav{padding:10px 20px}
+        }
+    </style>
+</head>
+<body>
+    <!-- 面包屑 -->
+    <div class="breadcrumb">
+        <a href="index.html">首页</a>
+        <span>›</span>
+        <a href="knowledge-graph.html">知识图谱</a>
+        <span>›</span>
+        <span style="color:#fff">3D场景</span>
+    </div>
+    
+    <!-- 导航 -->
+    <nav class="nav">
+        <div class="nav-brand">🎮 3D场景可视化</div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="knowledge-graph.html">📚 知识图谱</a>
+            <a href="bootloader.html">⚡ Bootloader</a>
+            <a href="capl_basics.html">📝 CAPL基础</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>🎮 3D 场景可视化</h1>
+        <p class="subtitle">用交互式图形理解汽车电子核心概念</p>
+        
+        <!-- 分类筛选 -->
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">全部场景</button>
+            <button class="filter-btn" data-filter="network">🌐 网络拓扑</button>
+            <button class="filter-btn" data-filter="hardware">🔌 硬件结构</button>
+            <button class="filter-btn" data-filter="protocol">📡 协议时序</button>
+        </div>
+
+        <div class="scenes">
+            <!-- 场景1: 整车CAN网络 -->
+            <div class="scene-card" data-category="network">
+                <div class="scene-header" style="--accent:#00d4ff">
+                    <h3>🌐 整车网络：ECU如何通信？</h3>
+                    <p>CAN总线广播 + 网关路由转发 = 多ECU协同</p>
+                    <div class="tags">
+                        <span class="tag">网关=翻译官</span>
+                        <span class="tag green">BMS→网关→仪表</span>
+                        <span class="tag yellow">高速/低速分离</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz1" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">🔴 <span class="val">BMS</span> 电池管理</div>
+                        <div class="sem-label top-right">🔴 <span class="val">MCU</span> 电机控制</div>
+                        <div class="sem-label bottom-left">🟢 <span class="val">BCM</span> 车身控制</div>
+                        <div class="sem-label bottom-right">🟡 <span class="val">HU</span> 娱乐系统</div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>广播通信中</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>原理：</strong>所有ECU连接CAN总线，消息广播发送</div>
+                        <div class="info-item"><span class="arrow">→</span>各ECU根据ID过滤，只接收需要的信息</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景2: ECU内部结构 -->
+            <div class="scene-card" data-category="hardware">
+                <div class="scene-header" style="--accent:#10b981">
+                    <h3>🔌 ECU内部：CAN信号怎么收发？</h3>
+                    <p>MCU(数字) ↔ CAN收发器(电平转换) ↔ 总线(差分电压)</p>
+                    <div class="tags">
+                        <span class="tag green">MCU=大脑</span>
+                        <span class="tag">CAN收发器=翻译</span>
+                        <span class="tag purple">总线=公路</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz2" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">MCU <span class="val">处理数据</span></div>
+                        <div class="sem-label top-right">TX/RX <span class="val">数字信号</span></div>
+                        <div class="sem-label bottom-left">CAN收发器 <span class="val">电平转换</span></div>
+                        <div class="sem-label bottom-right">CAN_H/L <span class="val">差分电压</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>信号转换中</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>关键：</strong>CAN_H=2.5V~3.5V, CAN_L=1.5V~2.5V</div>
+                        <div class="info-item"><span class="arrow">→</span>隐性=差分0V, 显性=差分2V</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景3: CAN报文帧 -->
+            <div class="scene-card" data-category="protocol">
+                <div class="scene-header" style="--accent:#f59e0b">
+                    <h3>📨 CAN报文：数据是怎么传输的？</h3>
+                    <p>ID越小优先级越高，多节点同时发送时低ID优先占用总线</p>
+                    <div class="tags">
+                        <span class="tag yellow">ID=优先级</span>
+                        <span class="tag">DLC=长度</span>
+                        <span class="tag red">CRC=校验</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz3" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">SOF <span class="val">帧开始</span></div>
+                        <div class="sem-label top-right">ID=0x100 <span class="val">优先级</span></div>
+                        <div class="sem-label bottom-left">DATA <span class="val">8字节</span></div>
+                        <div class="sem-label bottom-right">CRC <span class="val">校验</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>帧传输中</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>过程：</strong>先发ID再发数据，最快500kbps</div>
+                        <div class="info-item"><span class="arrow">→</span>接收方用CRC检验，错误自动重传</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景4: OBD接口 -->
+            <div class="scene-card" data-category="hardware">
+                <div class="scene-header" style="--accent:#a855f7">
+                    <h3>📊 OBD接口：诊断工具插哪里？</h3>
+                    <p>16针标准接口，PIN 6/14=CAN，这就是车辆的"诊断窗口"</p>
+                    <div class="tags">
+                        <span class="tag purple">PIN 7=K线</span>
+                        <span class="tag green">PIN 6=CAN_H</span>
+                        <span class="tag yellow">PIN 14=CAN_L</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz4" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">PIN 16 <span class="val">12V供电</span></div>
+                        <div class="sem-label top-right">PIN 4/5 <span class="val">地线</span></div>
+                        <div class="sem-label bottom-left">PIN 6 <span class="val">CAN_H</span></div>
+                        <div class="sem-label bottom-right">PIN 14 <span class="val">CAN_L</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>连接就绪</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>用途：</strong>读取故障码、实时数据、刷写程序</div>
+                        <div class="info-item"><span class="arrow">→</span>4S店/维修厂用诊断仪插这里</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景5: Bootloader流程 -->
+            <div class="scene-card" data-category="protocol">
+                <div class="scene-header" style="--accent:#ef4444">
+                    <h3>🚀 Bootloader：ECU程序怎么升级？</h3>
+                    <p>0x34请求下载 → 0x36传输数据 → 0x37完成，整个过程就像"远程装系统"</p>
+                    <div class="tags">
+                        <span class="tag red">0x34=请求</span>
+                        <span class="tag green">0x36=传数据</span>
+                        <span class="tag yellow">0x37=完成</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz5" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">诊断仪 <span class="val">发送请求</span></div>
+                        <div class="sem-label top-right">ECU <span class="val">写入Flash</span></div>
+                        <div class="sem-label bottom-left">数据块 <span class="val">分批传输</span></div>
+                        <div class="sem-label bottom-right">校验 <span class="val">SHA256</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>下载升级中</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>流程：</strong>安全会话→请求下载→传输数据→校验→激活</div>
+                        <div class="info-item"><span class="arrow">→</span>传输中可用0x78表示继续请求</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景6: UDS会话 -->
+            <div class="scene-card" data-category="protocol">
+                <div class="scene-header" style="--accent:#00d4ff">
+                    <h3>⚡ UDS会话：为什么有些操作不能做？</h3>
+                    <p>默认会话权限最小，扩展会话可读写，编程会话可刷写，就像：访客→员工→管理员</p>
+                    <div class="tags">
+                        <span class="tag">默认=只读</span>
+                        <span class="tag green">扩展=读写</span>
+                        <span class="tag red">编程=刷写</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz6" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">默认会话 <span class="val">0x01</span></div>
+                        <div class="sem-label top-right">扩展会话 <span class="val">0x03</span></div>
+                        <div class="sem-label bottom-left">编程会话 <span class="val">0x02</span></div>
+                        <div class="sem-label bottom-right">安全锁定 <span class="val">0x27</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>会话切换中</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>关键：</strong>敏感操作需要0x27安全访问解锁</div>
+                        <div class="info-item"><span class="arrow">→</span>种子-密钥算法防止未授权访问</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景7: CAN FD -->
+            <div class="scene-card" data-category="network">
+                <div class="scene-header" style="--accent:#10b981">
+                    <h3>🚀 CAN FD：为什么CAN FD更快？</h3>
+                    <p>传统CAN只有8字节，CAN FD可达64字节，就像：快递小包→快递大箱</p>
+                    <div class="tags">
+                        <span class="tag green">8B→64B</span>
+                        <span class="tag">500k→8M</span>
+                        <span class="tag purple">两段速率</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz7" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">CAN <span class="val">8字节</span></div>
+                        <div class="sem-label top-right">CAN FD <span class="val">64字节</span></div>
+                        <div class="sem-label bottom-left">500kbps <span class="val">传统</span></div>
+                        <div class="sem-label bottom-right">8Mbps <span class="val">FD</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>大帧传输中</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>应用：</strong>自动驾驶/域控制器等大数据量场景</div>
+                        <div class="info-item"><span class="arrow">→</span>兼容CAN，仲裁段仍用500k</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 场景8: DTC故障码 -->
+            <div class="scene-card" data-category="protocol">
+                <div class="scene-header" style="--accent:#f59e0b">
+                    <h3>🔍 DTC故障码：P0301是什么意思？</h3>
+                    <p>DTC标准格式：P/C/B/U表示系统 + 数字表示具体故障，P0301=发动机气缸1失火</p>
+                    <div class="tags">
+                        <span class="tag red">P=动力</span>
+                        <span class="tag green">C=底盘</span>
+                        <span class="tag yellow">B=车身</span>
+                        <span class="tag purple">U=网络</span>
+                    </div>
+                </div>
+                <div class="viz-container">
+                    <svg class="svg-viz" id="viz8" viewBox="0 0 400 300"></svg>
+                    <div class="semantic-overlay">
+                        <div class="sem-label top-left">P0xxx <span class="val">动力系统</span></div>
+                        <div class="sem-label top-right">C0xxx <span class="val">底盘系统</span></div>
+                        <div class="sem-label bottom-left">B0xxx <span class="val">车身系统</span></div>
+                        <div class="sem-label bottom-right">U0xxx <span class="val">网络系统</span></div>
+                    </div>
+                    <div class="anim-badge"><div class="anim-dot"></div>故障监测</div>
+                </div>
+                <div class="scene-info">
+                    <div class="info-row">
+                        <div class="info-item"><strong>状态字节：</strong>bit0=当前故障, bit3=历史故障</div>
+                        <div class="info-item"><span class="arrow">→</span>0x19读DTC, 0x14清除DTC</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 概念总结 -->
+        <div class="summary">
+            <h2>💡 核心概念总结</h2>
+            <div class="summary-grid">
+                <div class="summary-card blue">
+                    <h4>🌐 网络通信的本质</h4>
+                    <p>CAN总线是广播网络，所有节点都能听到。ID就像"门牌号"，每个ECU只关心发给自己的消息。网关负责不同速率总线的"翻译"工作。</p>
+                </div>
+                <div class="summary-card green">
+                    <h4>🔐 诊断通信的本质</h4>
+                    <p>UDS是基于CAN的应用层协议，就像HTTP是基于TCP的一样。它定义了"请求-响应"的标准化格式，让所有车型都能用同一套诊断工具。</p>
+                </div>
+                <div class="summary-card yellow">
+                    <h4>⚙️ Bootloader的本质</h4>
+                    <p>Bootloader是ECU里的"重装系统"程序。它允许通过诊断接口更新App程序，而不需要拆芯片。安全访问(0x27)就是防止被恶意刷写的锁。</p>
+                </div>
+                <div class="summary-card purple">
+                    <h4>🎛️ 标定的本质</h4>
+                    <p>标定是调整软件中的"魔法数字"。发动机MAP图、换挡策略、PID参数...这些都需要根据硬件特性微调。标定工具直接读写内存，实时生效。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== SVG 动画可视化 ==========
+        
+        // 绘制场景1: 整车网络拓扑
+        function drawNetTopology() {
+            const svg = document.getElementById('viz1');
+            if (!svg) return;
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="gradBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.8"/>
+                        <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0.2"/>
+                    </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                </defs>
+                
+                <!-- 背景网格 -->
+                <pattern id="grid1" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#grid1)"/>
+                
+                <!-- CAN总线 -->
+                <line x1="50" y1="150" x2="350" y2="150" stroke="url(#gradBlue)" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
+                <text x="200" y="175" fill="#00d4ff" font-size="10" text-anchor="middle">CAN BUS</text>
+                
+                <!-- 动画数据包 -->
+                <rect x="80" y="145" width="30" height="10" rx="3" fill="#00d4ff" opacity="0.8">
+                    <animate attributeName="x" values="80;320;80" dur="3s" repeatCount="indefinite"/>
+                </rect>
+                
+                <!-- 网关(中心) -->
+                <g transform="translate(200,150)">
+                    <rect x="-35" y="-25" width="70" height="50" rx="8" fill="#ef4444" opacity="0.9"/>
+                    <rect x="-30" y="-20" width="60" height="40" rx="5" fill="#1a1a2e"/>
+                    <text x="0" y="5" fill="#ef4444" font-size="12" text-anchor="middle" font-weight="bold">GATEWAY</text>
+                    <animateTransform attributeName="transform" type="rotate" values="0;5;-5;0" dur="4s" repeatCount="indefinite" additive="sum"/>
+                </g>
+                
+                <!-- BMS -->
+                <g transform="translate(80,80)">
+                    <rect x="-25" y="-18" width="50" height="36" rx="5" fill="#00d4ff" opacity="0.8"/>
+                    <text x="0" y="5" fill="#fff" font-size="10" text-anchor="middle">BMS</text>
+                </g>
+                <line x1="80" y1="98" x2="165" y2="125" stroke="#00d4ff" stroke-width="2" stroke-dasharray="4,2">
+                    <animate attributeName="stroke-dashoffset" values="0;-12" dur="1s" repeatCount="indefinite"/>
+                </line>
+                
+                <!-- MCU -->
+                <g transform="translate(320,80)">
+                    <rect x="-25" y="-18" width="50" height="36" rx="5" fill="#00d4ff" opacity="0.8"/>
+                    <text x="0" y="5" fill="#fff" font-size="10" text-anchor="middle">MCU</text>
+                </g>
+                <line x1="320" y1="98" x2="235" y2="125" stroke="#00d4ff" stroke-width="2" stroke-dasharray="4,2">
+                    <animate attributeName="stroke-dashoffset" values="0;12" dur="1s" repeatCount="indefinite"/>
+                </line>
+                
+                <!-- BCM -->
+                <g transform="translate(80,220)">
+                    <rect x="-25" y="-18" width="50" height="36" rx="5" fill="#10b981" opacity="0.8"/>
+                    <text x="0" y="5" fill="#fff" font-size="10" text-anchor="middle">BCM</text>
+                </g>
+                <line x1="80" y1="202" x2="165" y2="175" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2">
+                    <animate attributeName="stroke-dashoffset" values="0;-12" dur="1.5s" repeatCount="indefinite"/>
+                </line>
+                
+                <!-- HU -->
+                <g transform="translate(320,220)">
+                    <rect x="-25" y="-18" width="50" height="36" rx="5" fill="#f59e0b" opacity="0.8"/>
+                    <text x="0" y="5" fill="#fff" font-size="10" text-anchor="middle">HU</text>
+                </g>
+                <line x1="320" y1="202" x2="235" y2="175" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2">
+                    <animate attributeName="stroke-dashoffset" values="0;12" dur="1.2s" repeatCount="indefinite"/>
+                </line>
+            `;
+        }
+        
+        // 绘制场景2: ECU内部结构
+        function drawECUInternal() {
+            const svg = document.getElementById('viz2');
+            if (!svg) return;
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="pcbGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0a3a0a"/>
+                        <stop offset="100%" style="stop-color:#0a2a0a"/>
+                    </linearGradient>
+                </defs>
+                
+                <!-- PCB板 -->
+                <rect x="40" y="40" width="320" height="220" rx="5" fill="url(#pcbGrad)" stroke="#1a5a1a" stroke-width="2"/>
+                
+                <!-- 走线 -->
+                <path d="M 120 120 L 120 200 L 280 200" fill="none" stroke="#c4a000" stroke-width="2" opacity="0.6"/>
+                <path d="M 160 120 L 160 200 L 280 200" fill="none" stroke="#c4a000" stroke-width="2" opacity="0.6"/>
+                <path d="M 200 120 L 200 200 L 280 200" fill="none" stroke="#c4a000" stroke-width="2" opacity="0.6"/>
+                
+                <!-- MCU芯片 -->
+                <g transform="translate(120,110)">
+                    <rect x="-40" y="-30" width="80" height="60" rx="3" fill="#00d4ff" opacity="0.9"/>
+                    <rect x="-35" y="-25" width="70" height="50" rx="2" fill="#003344"/>
+                    <text x="0" y="5" fill="#00d4ff" font-size="12" text-anchor="middle" font-weight="bold">MCU</text>
+                    <animateTransform attributeName="transform" type="rotate" values="0;2;-2;0" dur="3s" repeatCount="indefinite" additive="sum"/>
+                </g>
+                
+                <!-- CAN收发器 -->
+                <g transform="translate(220,110)">
+                    <rect x="-30" y="-22" width="60" height="44" rx="2" fill="#10b981" opacity="0.9"/>
+                    <rect x="-25" y="-17" width="50" height="34" rx="2" fill="#002211"/>
+                    <text x="0" y="3" fill="#10b981" font-size="10" text-anchor="middle" font-weight="bold">CAN IC</text>
+                </g>
+                
+                <!-- 晶振 -->
+                <g transform="translate(300,80)">
+                    <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#ef4444" opacity="0.9"/>
+                    <text x="0" y="4" fill="#fff" font-size="8" text-anchor="middle">XTAL</text>
+                </g>
+                
+                <!-- CAN连接器 -->
+                <g transform="translate(200,210)">
+                    <rect x="-50" y="-12" width="100" height="24" rx="3" fill="#444" opacity="0.9"/>
+                    <text x="0" y="4" fill="#888" font-size="10" text-anchor="middle">CAN_H / CAN_L</text>
+                </g>
+                
+                <!-- 信号流箭头 -->
+                <g>
+                    <line x1="165" y1="110" x2="190" y2="110" stroke="#00d4ff" stroke-width="2"/>
+                    <polygon points="190,105 200,110 190,115" fill="#00d4ff"/>
+                    <text x="180" y="100" fill="#00d4ff" font-size="8" text-anchor="middle">TX</text>
+                    
+                    <line x1="190" y1="120" x2="165" y2="120" stroke="#10b981" stroke-width="2"/>
+                    <polygon points="165,115 155,120 165,125" fill="#10b981"/>
+                    <text x="180" y="135" fill="#10b981" font-size="8" text-anchor="middle">RX</text>
+                </g>
+            `;
+        }
+        
+        // 绘制场景3: CAN报文帧
+        function drawCanFrame() {
+            const svg = document.getElementById('viz3');
+            if (!svg) return;
+            svg.innerHTML = `
+                <rect width="100%" height="100%" fill="rgba(5,5,16,1)"/>
+                <text x="200" y="30" fill="#666" font-size="10" text-anchor="middle">CAN 2.0 数据帧结构</text>
+                
+                <!-- SOF -->
+                <g>
+                    <rect x="20" y="100" width="35" height="80" rx="3" fill="#00d4ff" opacity="0.8">
+                        <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
+                    </rect>
+                    <text x="37" y="145" fill="#fff" font-size="10" text-anchor="middle">SOF</text>
+                    <text x="37" y="195" fill="#00d4ff" font-size="8" text-anchor="middle">1bit</text>
+                </g>
+                
+                <!-- ID -->
+                <g>
+                    <rect x="60" y="100" width="70" height="80" rx="3" fill="#10b981" opacity="0.8">
+                        <animate attributeName="opacity" values="0.6;1;0.6" dur="1.2s" repeatCount="indefinite"/>
+                    </rect>
+                    <text x="95" y="145" fill="#fff" font-size="10" text-anchor="middle">ID</text>
+                    <text x="95" y="195" fill="#10b981" font-size="8" text-anchor="middle">11/29bit</text>
+                </g>
+                
+                <!-- RTR -->
+                <g>
+                    <rect x="135" y="100" width="25" height="80" rx="3" fill="#f59e0b" opacity="0.8"/>
+                    <text x="147" y="145" fill="#fff" font-size="9" text-anchor="middle">RTR</text>
+                </g>
+                
+                <!-- DLC -->
+                <g>
+                    <rect x="165" y="100" width="35" height="80" rx="3" fill="#a855f7" opacity="0.8">
+                        <animate attributeName="opacity" values="0.5;1;0.5" dur="0.8s" repeatCount="indefinite"/>
+                    </rect>
+                    <text x="182" y="145" fill="#fff" font-size="9" text-anchor="middle">DLC</text>
+                    <text x="182" y="195" fill="#a855f7" font-size="8" text-anchor="middle">4bit</text>
+                </g>
+                
+                <!-- DATA -->
+                <g>
+                    <rect x="205" y="100" width="140" height="80" rx="3" fill="#ef4444" opacity="0.8">
+                        <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+                    </rect>
+                    <text x="275" y="145" fill="#fff" font-size="12" text-anchor="middle">DATA</text>
+                    <text x="275" y="195" fill="#ef4444" font-size="8" text-anchor="middle">0-64 Bytes</text>
+                </g>
+                
+                <!-- CRC -->
+                <g>
+                    <rect x="350" y="100" width="30" height="80" rx="3" fill="#00d4ff" opacity="0.8">
+                        <animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+                    </rect>
+                    <text x="365" y="145" fill="#fff" font-size="10" text-anchor="middle">CRC</text>
+                </g>
+                
+                <!-- 传输动画 -->
+                <g>
+                    <line x1="20" y1="250" x2="380" y2="250" stroke="#333" stroke-width="2"/>
+                    <rect x="20" y="240" width="40" height="20" rx="5" fill="#00d4ff">
+                        <animate attributeName="x" values="20;340;20" dur="2s" repeatCount="indefinite"/>
+                    </rect>
+                    <text x="200" y="280" fill="#888" font-size="9" text-anchor="middle">← 数据从左向右传输 →</text>
+                </g>
+            `;
+        }
+        
+        // 绘制场景4: OBD接口
+        function drawOBD() {
+            const svg = document.getElementById('viz4');
+            if (!svg) return;
+            const pinDefs = [
+                {color:'#ffd700',name:'16'},{color:'#ffd700',name:'1'},
+                {color:'#ffd700',name:'5'},{color:'#00d4ff',name:'6'},
+                {color:'#ffd700',name:'7'},{color:'#10b981',name:'14'},
+                {color:'#ffd700',name:'2'},{color:'#ef4444',name:'4'},
+                {color:'#ffd700',name:'3'},{color:'#ffd700',name:'11'},
+                {color:'#ffd700',name:'12'},{color:'#ffd700',name:'13'},
+                {color:'#ffd700',name:'8'},{color:'#ffd700',name:'15'},
+                {color:'#ffd700',name:'9'},{color:'#ffd700',name:'10'}
+            ];
+            const pinGroups = [];
+            for(let row = 0; row < 4; row++) {
+                for(let col = 0; col < 4; col++) {
+                    const idx = row * 4 + col;
+                    const pin = pinDefs[idx];
+                    pinGroups.push(`
+                        <g transform="translate(${-100 + col * 50}, ${-40 + row * 30})">
+                            <rect x="-15" y="-8" width="30" height="16" rx="2" fill="${pin.color}" opacity="0.9">
+                                <animate attributeName="opacity" values="0.7;1;0.7" dur="${1+idx*0.1}s" repeatCount="indefinite"/>
+                            </rect>
+                            <text x="0" y="3" fill="#000" font-size="8" text-anchor="middle" font-weight="bold">${pin.name}</text>
+                        </g>
+                    `);
+                }
+            }
+            
+            svg.innerHTML = `
+                <g transform="translate(200,140)">
+                    <rect x="-120" y="-60" width="240" height="120" rx="10" fill="#2a2a2a" stroke="#444" stroke-width="2"/>
+                    ${pinGroups.join('')}
+                    <text x="0" y="-75" fill="#666" font-size="10" text-anchor="middle">OBD-II 16-Pin Interface</text>
+                    <rect x="-100" y="-40" width="200" height="100" fill="none" stroke="#00d4ff" stroke-width="2" rx="5" opacity="0">
+                        <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/>
+                    </rect>
+                </g>
+                <g transform="translate(200,280)">
+                    <text x="0" y="0" fill="#10b981" font-size="10" text-anchor="middle">PIN 6 = CAN_H (高速) | PIN 14 = CAN_L (高速)</text>
+                    <text x="0" y="15" fill="#888" font-size="9" text-anchor="middle">PIN 16 = 12V供电 | PIN 4/5 = 地线</text>
+                </g>
+            `;
+        }
+        
+        // 绘制场景5: Bootloader流程
+        function drawBootloader() {
+            const svg = document.getElementById('viz5');
+            if (!svg) return;
+            svg.innerHTML = `
+                <!-- 诊断仪 -->
+                <g transform="translate(80,100)">
+                    <rect x="-50" y="-40" width="100" height="80" rx="8" fill="#00d4ff" opacity="0.8"/>
+                    <rect x="-45" y="-35" width="90" height="70" rx="5" fill="#003344"/>
+                    <text x="0" y="-10" fill="#00d4ff" font-size="11" text-anchor="middle" font-weight="bold">诊断仪</text>
+                    <text x="0" y="10" fill="#888" font-size="9" text-anchor="middle">Tester</text>
+                    <text x="0" y="25" fill="#10b981" font-size="9" text-anchor="middle">*.hex</text>
+                </g>
+                
+                <!-- ECU -->
+                <g transform="translate(320,100)">
+                    <rect x="-50" y="-40" width="100" height="80" rx="8" fill="#10b981" opacity="0.8"/>
+                    <rect x="-45" y="-35" width="90" height="70" rx="5" fill="#002211"/>
+                    <text x="0" y="-10" fill="#10b981" font-size="11" text-anchor="middle" font-weight="bold">ECU</text>
+                    <text x="0" y="10" fill="#888" font-size="9" text-anchor="middle">Flash</text>
+                    <text x="0" y="25" fill="#f59e0b" font-size="9" text-anchor="middle">Boot</text>
+                </g>
+                
+                <!-- CAN总线 -->
+                <line x1="30" y1="180" x2="370" y2="180" stroke="#333" stroke-width="4"/>
+                <text x="200" y="200" fill="#666" font-size="9" text-anchor="middle">CAN Bus</text>
+                
+                <!-- 传输数据包 -->
+                <rect x="80" y="175" width="25" height="12" rx="3" fill="#00d4ff">
+                    <animate attributeName="x" values="80;295;80" dur="3s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="1;1;0" dur="3s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="80" y="175" width="25" height="12" rx="3" fill="#f59e0b">
+                    <animate attributeName="x" values="80;295;80" dur="3s" begin="0.8s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="1;1;0" dur="3s" begin="0.8s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="80" y="175" width="25" height="12" rx="3" fill="#10b981">
+                    <animate attributeName="x" values="80;295;80" dur="3s" begin="1.6s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="1;1;0" dur="3s" begin="1.6s" repeatCount="indefinite"/>
+                </rect>
+                
+                <!-- 流程标注 -->
+                <g transform="translate(200,60)">
+                    <text x="-80" y="0" fill="#00d4ff" font-size="10">0x34 请求下载</text>
+                    <text x="-30" y="20" fill="#f59e0b" font-size="10">0x36 传输数据</text>
+                    <text x="50" y="0" fill="#10b981" font-size="10">0x37 完成</text>
+                </g>
+                
+                <!-- 校验 -->
+                <g transform="translate(320,180)">
+                    <circle r="15" fill="#ef4444" opacity="0.8">
+                        <animate attributeName="r" values="12;18;12" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                    <text x="0" y="4" fill="#fff" font-size="9" text-anchor="middle">✓</text>
+                </g>
+            `;
+        }
+        
+        // 绘制场景6: UDS会话状态机
+        function drawUDSState() {
+            const svg = document.getElementById('viz6');
+            if (!svg) return;
+            svg.innerHTML = `
+                <g transform="translate(200,150)">
+                    <!-- 默认会话 -->
+                    <g>
+                        <rect x="-140" y="-80" width="90" height="60" rx="8" fill="#00d4ff" opacity="0.8"/>
+                        <text x="-95" y="-45" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">默认</text>
+                        <text x="-95" y="-30" fill="#fff" font-size="9" text-anchor="middle">0x01</text>
+                        <animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="3s" repeatCount="indefinite"/>
+                    </g>
+                    
+                    <!-- 扩展会话 -->
+                    <g>
+                        <rect x="50" y="-80" width="90" height="60" rx="8" fill="#10b981" opacity="0.8"/>
+                        <text x="95" y="-45" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">扩展</text>
+                        <text x="95" y="-30" fill="#fff" font-size="9" text-anchor="middle">0x03</text>
+                        <animateTransform attributeName="transform" type="translate" values="0,0;0,3;0,0" dur="2.5s" repeatCount="indefinite"/>
+                    </g>
+                    
+                    <!-- 编程会话 -->
+                    <g>
+                        <rect x="-45" y="20" width="90" height="60" rx="8" fill="#f59e0b" opacity="0.8"/>
+                        <text x="0" y="55" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">编程</text>
+                        <text x="0" y="70" fill="#fff" font-size="9" text-anchor="middle">0x02</text>
+                        <animateTransform attributeName="transform" type="translate" values="0,0;3,0;-3,0;0,0" dur="4s" repeatCount="indefinite"/>
+                    </g>
+                    
+                    <!-- 安全锁定 -->
+                    <g>
+                        <circle r="30" fill="#ef4444" opacity="0.8"/>
+                        <text x="0" y="-5" fill="#fff" font-size="14">🔒</text>
+                        <text x="0" y="10" fill="#fff" font-size="8" text-anchor="middle">0x27</text>
+                    </g>
+                    
+                    <!-- 连接箭头 -->
+                    <line x1="-50" y1="-50" x2="50" y2="-50" stroke="#666" stroke-width="2" marker-end="url(#arrowhead6)"/>
+                    <text x="0" y="-60" fill="#666" font-size="8" text-anchor="middle">0x10切换</text>
+                    
+                    <line x1="0" y1="-20" x2="0" y2="20" stroke="#666" stroke-width="2"/>
+                    <text x="20" y="5" fill="#666" font-size="8">解锁</text>
+                    
+                    <line x1="-95" y1="-20" x2="-30" y2="50" stroke="#666" stroke-width="1" stroke-dasharray="4,2"/>
+                    <line x1="95" y1="-20" x2="30" y2="50" stroke="#666" stroke-width="1" stroke-dasharray="4,2"/>
+                </g>
+                
+                <defs>
+                    <marker id="arrowhead6" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+                    </marker>
+                </defs>
+                
+                <text x="200" y="270" fill="#888" font-size="9" text-anchor="middle">敏感操作需要安全访问(0x27)解锁</text>
+            `;
+        }
+        
+        // 绘制场景7: CAN FD对比
+        function drawCanFD() {
+            const svg = document.getElementById('viz7');
+            if (!svg) return;
+            const blocks1 = [];
+            const blocks2 = [];
+            for(let i = 0; i < 8; i++) blocks1.push(`<rect x="${-150+i*15}" y="10" width="12" height="30" rx="2" fill="#00d4ff" opacity="0.4"/>`);
+            for(let i = 0; i < 16; i++) blocks2.push(`<rect x="${50+i*8}" y="15" width="6" height="40" rx="1" fill="#10b981" opacity="0.5"><animate attributeName="opacity" values="0.3;0.7;0.3" dur="${1+i*0.1}s" repeatCount="indefinite"/></rect>`);
+            
+            svg.innerHTML = `
+                <g transform="translate(200,150)">
+                    <!-- CAN -->
+                    <g>
+                        <rect x="-180" y="-60" width="150" height="50" rx="5" fill="#00d4ff" opacity="0.6"/>
+                        <text x="-105" y="-30" fill="#fff" font-size="14" text-anchor="middle" font-weight="bold">CAN</text>
+                        <text x="-105" y="-10" fill="#fff" font-size="9" text-anchor="middle">8字节 | 500kbps</text>
+                        ${blocks1.join('')}
+                    </g>
+                    
+                    <!-- 箭头 -->
+                    <line x1="-20" y1="0" x2="30" y2="0" stroke="#666" stroke-width="2" marker-end="url(#arrow7)"/>
+                    <text x="5" y="-15" fill="#666" font-size="8" text-anchor="middle">升级</text>
+                    
+                    <!-- CAN FD -->
+                    <g>
+                        <rect x="40" y="-70" width="140" height="70" rx="5" fill="#10b981" opacity="0.8"/>
+                        <text x="110" y="-35" fill="#fff" font-size="14" text-anchor="middle" font-weight="bold">CAN FD</text>
+                        <text x="110" y="-15" fill="#fff" font-size="9" text-anchor="middle">64字节 | 8Mbps</text>
+                        ${blocks2.join('')}
+                    </g>
+                    
+                    <line x1="-30" y1="-90" x2="-30" y2="80" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2"/>
+                    <text x="-25" y="-95" fill="#f59e0b" font-size="8">8x</text>
+                </g>
+                
+                <defs>
+                    <marker id="arrow7" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+                    </marker>
+                </defs>
+                
+                <text x="200" y="280" fill="#888" font-size="9" text-anchor="middle">兼容CAN，仲裁段仍用500k，数据段可加速到8M</text>
+            `;
+        }
+        
+        // 绘制场景8: DTC分类
+        function drawDTC() {
+            const svg = document.getElementById('viz8');
+            if (!svg) return;
+            svg.innerHTML = `
+                <g transform="translate(200,150)">
+                    <!-- 中心ECU -->
+                    <circle r="25" fill="#444" opacity="0.8"/>
+                    <text x="0" y="5" fill="#888" font-size="10" text-anchor="middle">ECU</text>
+                    
+                    <!-- P类-动力 -->
+                    <g>
+                        <circle cx="-130" cy="-60" r="45" fill="#00d4ff" opacity="0.7"/>
+                        <text x="-130" y="-50" fill="#fff" font-size="16" text-anchor="middle" font-weight="bold">P</text>
+                        <text x="-130" y="-30" fill="#fff" font-size="9" text-anchor="middle">Powertrain</text>
+                        <text x="-130" y="-15" fill="#888" font-size="8" text-anchor="middle">动力系统</text>
+                        <line x1="-90" y1="-45" x2="-25" y2="0" stroke="#00d4ff" stroke-width="2" stroke-dasharray="4,2">
+                            <animate attributeName="stroke-dashoffset" values="0;-12" dur="1s" repeatCount="indefinite"/>
+                        </line>
+                    </g>
+                    
+                    <!-- C类-底盘 -->
+                    <g>
+                        <circle cx="130" cy="-60" r="45" fill="#10b981" opacity="0.7"/>
+                        <text x="130" y="-50" fill="#fff" font-size="16" text-anchor="middle" font-weight="bold">C</text>
+                        <text x="130" y="-30" fill="#fff" font-size="9" text-anchor="middle">Chassis</text>
+                        <text x="130" y="-15" fill="#888" font-size="8" text-anchor="middle">底盘系统</text>
+                        <line x1="90" y1="-45" x2="25" y2="0" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2">
+                            <animate attributeName="stroke-dashoffset" values="0;12" dur="1.2s" repeatCount="indefinite"/>
+                        </line>
+                    </g>
+                    
+                    <!-- B类-车身 -->
+                    <g>
+                        <circle cx="-130" cy="80" r="45" fill="#f59e0b" opacity="0.7"/>
+                        <text x="-130" y="90" fill="#fff" font-size="16" text-anchor="middle" font-weight="bold">B</text>
+                        <text x="-130" y="110" fill="#fff" font-size="9" text-anchor="middle">Body</text>
+                        <text x="-130" y="125" fill="#888" font-size="8" text-anchor="middle">车身系统</text>
+                        <line x1="-90" y1="60" x2="-25" y2="0" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2">
+                            <animate attributeName="stroke-dashoffset" values="0;-12" dur="0.8s" repeatCount="indefinite"/>
+                        </line>
+                    </g>
+                    
+                    <!-- U类-网络 -->
+                    <g>
+                        <circle cx="130" cy="80" r="45" fill="#a855f7" opacity="0.7"/>
+                        <text x="130" y="90" fill="#fff" font-size="16" text-anchor="middle" font-weight="bold">U</text>
+                        <text x="130" y="110" fill="#fff" font-size="9" text-anchor="middle">Network</text>
+                        <text x="130" y="125" fill="#888" font-size="8" text-anchor="middle">网络系统</text>
+                        <line x1="90" y1="60" x2="25" y2="0" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,2">
+                            <animate attributeName="stroke-dashoffset" values="0;12" dur="1.5s" repeatCount="indefinite"/>
+                        </line>
+                    </g>
+                </g>
+                
+                <text x="200" y="280" fill="#888" font-size="9" text-anchor="middle">示例: P0301 = 气缸1失火 | U0100 = 通信丢失</text>
+            `;
+        }
+        
+        // ========== 初始化 ==========
+        function initViz() {
+            try {
+                drawNetTopology();
+                drawECUInternal();
+                drawCanFrame();
+                drawOBD();
+                drawBootloader();
+                drawUDSState();
+                drawCanFD();
+                drawDTC();
+                console.log('SVG visualizations initialized');
+            } catch(e) {
+                console.error('Viz init error:', e);
+            }
+        }
+        
+        // 筛选功能
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.dataset.filter;
+                document.querySelectorAll('.scene-card').forEach(card => {
+                    if (filter === 'all' || card.dataset.category === filter) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // DOM加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initViz);
+        } else {
+            initViz();
+        }
+    </script>
+</body>
+</html>

@@ -3,478 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UDS诊断 & 状态机详解 | AutoTest Academy</title>
-    <link rel="stylesheet" href="nav-styles.css">
+    <title>UDS诊断 & 状态机 | AutoTest Academy</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 30px 0; border-bottom: 2px solid #ffd700; margin-bottom: 30px; }
-        h1 { font-size: 2.5em; background: linear-gradient(90deg, #ffd700, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .card { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
-        .card h2 { color: #ffd700; margin-bottom: 20px; font-size: 1.5em; }
-        .code-block { background: #0d1117; border-radius: 10px; padding: 20px; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.6; margin: 15px 0; border: 1px solid #30363d; }
-        .keyword { color: #ff7b72; } .function { color: #d2a8ff; } .comment { color: #6a737d; font-style: italic; }
-        .number { color: #79c0ff; } .string { color: #a5d6ff; } .type { color: #ffa657; }
-        .service { color: #7ee787; background: rgba(126,231,135,0.1); padding: 2px 6px; border-radius: 4px; }
-        pre { margin: 0; white-space: pre-wrap; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 20px 0; border-bottom: 2px solid #ffd700; margin-bottom: 20px; }
+        h1 { font-size: 1.8em; background: linear-gradient(90deg, #ffd700, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        h2 { color: #ffd700; margin-bottom: 15px; font-size: 1.2em; }
         
-        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .nav-tab { padding: 12px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px 10px 0 0; color: #8b949e; cursor: pointer; }
-        .nav-tab.active { background: #0d1117; color: #ffd700; border-bottom: 2px solid #ffd700; }
-        .tab-content { display: none; } .tab-content.active { display: block; }
+        /* 状态机 - 简化为SVG */
+        .state-machine { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; margin: 15px 0; flex-wrap: wrap; }
+        .state { padding: 15px 25px; border-radius: 10px; text-align: center; min-width: 100px; transition: all 0.3s; }
+        .state.active { box-shadow: 0 0 15px rgba(255,215,0,0.6); transform: scale(1.05); }
+        .state.default { background: linear-gradient(135deg, #4b5563, #374151); }
+        .state.extended { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+        .state.programming { background: linear-gradient(135deg, #dc2626, #ef4444); }
+        .state-name { font-weight: bold; } .state-code { font-size: 0.85em; opacity: 0.8; }
+        .arrow { color: #ffd700; font-size: 1.5em; }
         
-        .state-machine { display: flex; justify-content: center; align-items: center; gap: 20px; padding: 30px; background: rgba(0,0,0,0.3); border-radius: 15px; margin: 20px 0; flex-wrap: wrap; }
-        .state { padding: 20px 30px; border-radius: 15px; text-align: center; min-width: 120px; transition: all 0.3s; }
-        .state.active { box-shadow: 0 0 20px rgba(255,215,0,0.5); }
-        .state.default { background: linear-gradient(135deg, #374151, #4b5563); } .state.extended { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
-        .state.programming { background: linear-gradient(135deg, #dc2626, #ef4444); } .state.locked { background: linear-gradient(135deg, #dc2626, #ef4444); }
-        .state.unlocked { background: linear-gradient(135deg, #059669, #10b981); }
-        .state-name { font-size: 1.2em; font-weight: bold; } .state-code { font-size: 0.9em; opacity: 0.8; }
-        .state-arrow { color: #ffd700; font-size: 1.5em; }
+        /* 按钮 */
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; transition: all 0.3s; color: #fff; }
+        .btn-extended { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+        .btn-programming { background: linear-gradient(135deg, #dc2626, #ef4444); }
+        .btn-default { background: linear-gradient(135deg, #d97706, #f59e0b); }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
-        .uds-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .uds-table th, .uds-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .uds-table th { background: rgba(255,215,0,0.1); color: #ffd700; }
+        /* 表格 */
+        .table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .table th { background: rgba(255,215,0,0.1); color: #ffd700; }
+        .code { color: #7ee787; background: rgba(126,231,135,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
         
-        .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95em; margin: 5px; transition: all 0.3s; }
-        .btn-uds { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff; }
-        .btn-sm { background: linear-gradient(135deg, #7c3aed, #8b5cf6); color: #fff; }
-        .btn:hover { transform: translateY(-2px); }
+        /* 控制台 */
+        .console { background: #0a0a0a; border-radius: 8px; padding: 12px; font-family: 'Consolas', monospace; max-height: 200px; overflow-y: auto; font-size: 0.85em; }
+        .log { margin: 3px 0; }
+        .log-tx { color: #7ee787; }
+        .log-rx { color: #58a6ff; }
+        .log-error { color: #f85149; }
+        .log-info { color: #ffd700; }
         
-        .console { background: #000; border-radius: 8px; padding: 15px; font-family: 'Consolas', monospace; max-height: 300px; overflow-y: auto; }
-        .console-line { margin: 5px 0; font-size: 0.9em; }
-        .console-line.tx { color: #7ee787; } .console-line.rx { color: #58a6ff; }
-        .console-line.info { color: #ffd700; } .console-line.error { color: #f85149; }
+        /* 标签切换 */
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tab { padding: 10px 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px 8px 0 0; color: #888; cursor: pointer; border-bottom: none; }
+        .tab.active { background: #0d1117; color: #ffd700; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .panel { background: #0d1117; border-radius: 10px; padding: 20px; border: 1px solid #30363d; }
-        .panel h3 { color: #ffd700; margin-bottom: 15px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        .status-bar { height: 40px; background: rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; margin: 10px 0; }
-        .status-fill { height: 100%; display: flex; align-items: center; padding: 0 15px; transition: width 0.3s; font-weight: bold; }
-        .status-fill.default { background: #6b7280; } .status-fill.extended { background: #7c3aed; } .status-fill.programming { background: #dc2626; }
+        /* 码块 */
+        .code-block { background: #0d1117; border-radius: 8px; padding: 15px; font-family: 'Consolas', monospace; font-size: 0.85em; overflow-x: auto; line-height: 1.5; }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #6a737d; }
+        .num { color: #79c0ff; } .str { color: #a5d6ff; }
     </style>
 </head>
 <body>
-    <!-- 统一导航栏 -->
-    <nav class="navbar">
-        <a href="index.html" class="nav-logo">
-            <div class="logo-icon">🚗</div>
-            <span>AutoTest <span style="color: var(--primary)">Academy</span></span>
-        </a>
-        
-        <div class="nav-links" id="navLinks">
-            <a href="index.html" class="nav-link">首页</a>
-            <a href="learning_roadmap.html" class="nav-link">学习路线</a>
-            <a href="capl_demo.html" class="nav-link">CAPL基础</a>
-            <a href="capl_test_framework.html" class="nav-link">测试框架</a>
-            <a href="uds_state_machine.html" class="nav-link active">UDS诊断</a>
-            <a href="canfd_democar.html" class="nav-link">CAN FD</a>
-            <a href="bootloader_ota.html" class="nav-link">Bootloader</a>
-            <a href="xcp_safety.html" class="nav-link">XCP标定</a>
-            <a href="odx_diagnostics.html" class="nav-link">ODX</a>
-        </div>
-
-        <div class="nav-actions">
-            <a href="index.html" class="btn btn-ghost">
-                <span>←</span><span class="text">返回</span>
-            </a>
-        </div>
-    </nav>
-
-    <div class="main-content">
+    <div class="container">
         <header>
             <h1>🔧 UDS诊断 & 状态机</h1>
-            <p style="color: #8b949e;">Unified Diagnostic Services · 车载诊断协议</p>
+            <p style="color: #888; margin-top: 5px;">Unified Diagnostic Services · ISO 14229</p>
         </header>
 
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('overview')">UDS概述</button>
-            <button class="nav-tab" onclick="showTab('services')">常用服务</button>
-            <button class="nav-tab" onclick="showTab('session')">会话状态机</button>
-            <button class="nav-tab" onclick="showTab('capl')">CAPL实现</button>
-            <button class="nav-tab" onclick="showTab('demo')">交互演示</button>
+        <!-- 快速概览 -->
+        <div class="card">
+            <h2>📡 核心概念</h2>
+            <table class="table">
+                <tr><th>项目</th><th>说明</th></tr>
+                <tr><td>标准</td><td>ISO 14229-1 (UDSonCAN), ISO 15765-2</td></tr>
+                <tr><td>寻址</td><td>物理寻址 (1:1) / 功能寻址 (1:N)</td></tr>
+                <tr><td>会话</td><td>默认 / 扩展 / 编程三种会话</td></tr>
+                <tr><td>安全</td><td>Seed-Key 挑战响应机制</td></tr>
+            </table>
         </div>
 
-        <!-- UDS概述 -->
-        <div id="overview" class="tab-content active">
-            <div class="card">
-                <h2>📡 UDS 协议概述</h2>
-                <table class="uds-table">
-                    <tr><th>项目</th><th>说明</th></tr>
-                    <tr><td>标准</td><td>ISO 14229-1 (UDSonCAN), ISO 15765-2</td></tr>
-                    <tr><td>寻址</td><td>物理寻址 (1:1) / 功能寻址 (1:N)</td></tr>
-                    <tr><td>会话</td><td>默认会话 / 扩展会话 / 编程会话</td></tr>
-                    <tr><td>安全</td><td>安全访问 (Seed-Key)</td></tr>
-                </table>
+        <!-- 会话状态机 -->
+        <div class="card">
+            <h2>🔄 会话状态机 (可交互)</h2>
+            <div class="state-machine">
+                <div class="state default" id="s-default"><div class="state-name">Default</div><div class="state-code">0x01</div></div>
+                <div class="arrow">→</div>
+                <div class="state extended" id="s-extended"><div class="state-name">Extended</div><div class="state-code">0x03</div></div>
+                <div class="arrow">→</div>
+                <div class="state programming" id="s-programming"><div class="state-name">Programming</div><div class="state-code">0x02</div></div>
             </div>
-            <div class="card">
-                <h2>📦 报文结构</h2>
-                <div class="code-block">
-<pre><span class="comment">// UDS诊断请求</span>
-<span class="number">Byte 0</span>: <span class="service">SID</span> (Service ID)     <span class="comment">// 0x10 = 诊断会话控制</span>
-<span class="number">Byte 1+</span>: <span class="service">SF</span> (Sub-Function) <span class="comment">// 子功能参数</span>
-<span class="number">Byte N+</span>: <span class="service">Data</span>           <span class="comment">// 数据参数</span>
-
-<span class="comment">// 正响应</span>
-<span class="number">Byte 0</span>: <span class="service">SID + 0x40</span>       <span class="comment">// 0x50 = 会话控制响应</span>
-
-<span class="comment">// 负响应</span>
-<span class="number">Byte 0</span>: <span class="number">0x7F</span>
-<span class="number">Byte 1</span>: <span class="service">Rej-SID</span>
-<span class="number">Byte 2</span>: <span class="service">NRC</span>               <span class="comment">// 否定响应码</span></pre>
-                </div>
-            </div>
-            <div class="card">
-                <h2>🔢 常见 NRC</h2>
-                <table class="uds-table">
-                    <tr><th>NRC</th><th>名称</th><th>含义</th></tr>
-                    <tr><td><span class="service">0x11</span></td><td>serviceNotSupported</td><td>服务不支持</td></tr>
-                    <tr><td><span class="service">0x22</span></td><td>conditionsNotCorrect</td><td>条件不满足</td></tr>
-                    <tr><td><span class="service">0x33</span></td><td>securityAccessDenied</td><td>安全访问被拒绝</td></tr>
-                    <tr><td><span class="service">0x35</span></td><td>invalidKey</td><td>密钥无效</td></tr>
-                    <tr><td><span class="service">0x78</span></td><td>requestCorrectlyReceived</td><td>等待中</td></tr>
-                </table>
+            <div style="text-align: center;">
+                <button class="btn btn-extended" onclick="switchS('extended')">🔓 扩展会话</button>
+                <button class="btn btn-programming" onclick="switchS('programming')">🔧 编程会话</button>
+                <button class="btn btn-default" onclick="switchS('default')">🔙 默认会话</button>
             </div>
         </div>
 
         <!-- 常用服务 -->
-        <div id="services" class="tab-content">
-            <div class="card">
-                <h2>🔧 常用诊断服务</h2>
-                <table class="uds-table">
-                    <tr><th>SID</th><th>服务</th><th>功能</th></tr>
-                    <tr><td><span class="service">0x10</span></td><td>DiagnosticSessionControl</td><td>会话控制</td></tr>
-                    <tr><td><span class="service">0x11</span></td><td>ECUReset</td><td>ECU复位</td></tr>
-                    <tr><td><span class="service">0x14</span></td><td>ClearDTC</td><td>清除故障码</td></tr>
-                    <tr><td><span class="service">0x19</span></td><td>ReadDTCInformation</td><td>读取故障码</td></tr>
-                    <tr><td><span class="service">0x22</span></td><td>ReadDataByIdentifier</td><td>按DID读数据</td></tr>
-                    <tr><td><span class="service">0x27</span></td><td>SecurityAccess</td><td>安全访问</td></tr>
-                    <tr><td><span class="service">0x2E</span></td><td>WriteDataByIdentifier</td><td>按DID写数据</td></tr>
-                    <tr><td><span class="service">0x34</span></td><td>RequestDownload</td><td>请求下载</td></tr>
-                    <tr><td><span class="service">0x36</span></td><td>TransferData</td><td>传输数据</td></tr>
-                    <tr><td><span class="service">0x37</span></td><td>RequestTransferExit</td><td>传输退出</td></tr>
-                </table>
-            </div>
-            <div class="card">
-                <h2>📝 会话控制 0x10</h2>
-                <div class="code-block">
-<pre><span class="comment">// 子功能</span>
-<span class="number">0x01</span>: defaultSession      <span class="comment">// 默认会话</span>
-<span class="number">0x02</span>: programmingSession  <span class="comment">// 编程会话</span>
-<span class="number">0x03</span>: extendedDiagnostic <span class="comment">// 扩展诊断会话</span>
+        <div class="card">
+            <h2>🔧 常用诊断服务</h2>
+            <table class="table">
+                <tr><th>SID</th><th>服务</th><th>功能</th></tr>
+                <tr><td><span class="code">0x10</span></td><td>DiagnosticSessionControl</td><td>会话控制</td></tr>
+                <tr><td><span class="code">0x11</span></td><td>ECUReset</td><td>ECU复位</td></tr>
+                <tr><td><span class="code">0x22</span></td><td>ReadDataByIdentifier</td><td>按DID读数据</td></tr>
+                <tr><td><span class="code">0x27</span></td><td>SecurityAccess</td><td>安全访问</td></tr>
+                <tr><td><span class="code">0x2E</span></td><td>WriteDataByIdentifier</td><td>按DID写数据</td></tr>
+                <tr><td><span class="code">0x19</span></td><td>ReadDTCInformation</td><td>读取故障码</td></tr>
+                <tr><td><span class="code">0x14</span></td><td>ClearDTC</td><td>清除故障码</td></tr>
+                <tr><td><span class="code">0x34/36/37</span></td><td>RequestDownload/Transfer/Exit</td><td>刷写流程</td></tr>
+            </table>
+        </div>
 
-<span class="comment">// 示例</span>
-<span class="service">0x10</span> <span class="number">03</span>           <span class="comment">// 请求: 切换到扩展会话</span>
-<span class="service">0x50</span> <span class="number">03</span> <span class="number">00 32 00 C3</span> <span class="comment">// 响应: P2=50ms, P2*=20s</span></pre>
-                </div>
-            </div>
-            <div class="card">
-                <h2>🔐 安全访问 0x27</h2>
-                <div class="code-block">
-<pre><span class="comment">// Step 1: 请求种子</span>
-<span class="service">0x27</span> <span class="number">01</span>           <span class="comment">// 请求Level1种子</span>
-<span class="service">0x67</span> <span class="number">01</span> <span class="number">XX XX XX XX</span> <span class="comment">// ECU返回4字节随机种子</span>
+        <!-- 报文结构 -->
+        <div class="card">
+            <h2>📦 报文结构</h2>
+            <div class="code-block">
+<span class="cm">// 正响应 = SID + 0x40</span>
+<span class="cm">// 负响应 = 0x7F + Rej-SID + NRC</span>
 
-<span class="comment">// Step 2: 发送密钥</span>
-<span class="service">0x27</span> <span class="number">02</span> <span class="number">YY YY YY YY</span> <span class="comment">// Tester计算并发送密钥</span>
-<span class="service">0x67</span> <span class="number">02</span>           <span class="comment">// 成功</span>
-<span class="service">0x7F</span> <span class="number">27</span> <span class="number">0x35</span>   <span class="comment">// 失败: 密钥无效</span></pre>
-                </div>
+<span class="cm">// 示例: 切换到扩展会话</span>
+TX: <span class="num">10</span> <span class="num">03</span>              <span class="cm">// 请求</span>
+RX: <span class="num">50</span> <span class="num">03</span> <span class="num">00 32 00 C3</span>   <span class="cm">// P2=50ms, P2*=5000ms</span>
+
+<span class="cm">// 安全访问流程</span>
+TX: <span class="num">27</span> <span class="num">01</span>              <span class="cm">// 请求种子</span>
+RX: <span class="num">67</span> <span class="num">01</span> <span class="num">5A A5 C3 3C</span>    <span class="cm">// 返回4字节种子</span>
+TX: <span class="num">27</span> <span class="num">02</span> <span class="num">A5 5A 3C C3</span>  <span class="cm">// 发送密钥</span>
             </div>
         </div>
 
-        <!-- 会话状态机 -->
-        <div id="session" class="tab-content">
-            <div class="card">
-                <h2>🔄 会话状态机</h2>
-                <div class="state-machine">
-                    <div class="state default" id="state-default"><div class="state-name">Default</div><div class="state-code">0x01</div></div>
-                    <div class="state-arrow">→</div>
-                    <div class="state extended" id="state-extended"><div class="state-name">Extended</div><div class="state-code">0x03</div></div>
-                    <div class="state-arrow">→</div>
-                    <div class="state programming" id="state-programming"><div class="state-name">Programming</div><div class="state-code">0x02</div></div>
-                </div>
-                <div class="status-bar"><div class="status-fill default" id="sessionBar" style="width: 33%">Default Session</div></div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-sm" onclick="switchSession('extended')">🔓 扩展会话</button>
-                    <button class="btn btn-sm" onclick="switchSession('programming')">🔧 编程会话</button>
-                    <button class="btn btn-uds" onclick="switchSession('default')">🔙 默认会话</button>
-                </div>
-            </div>
-            <div class="card">
-                <h2>⚡ 安全状态机</h2>
-                <div class="state-machine">
-                    <div class="state locked" id="sec-locked"><div class="state-name">Locked</div><div class="state-code">安全锁定</div></div>
-                    <div class="state-arrow">↔</div>
-                    <div class="state unlocked" id="sec-unlocked"><div class="state-name">Unlocked</div><div class="state-code">安全解锁</div></div>
-                </div>
-            </div>
-            <div class="card">
-                <h2>📝 状态转移规则</h2>
-                <div class="code-block">
-<pre><span class="comment">// 转移条件</span>
-<span class="service">Default → Extended</span>: 0x10 0x03
-<span class="service">Default → Programming</span>: 0x10 0x02
-<span class="service">Extended → Default</span>: 0x10 0x01 或 S3超时(5s)
-<span class="service">Extended → Programming</span>: 0x10 0x02
-<span class="service">Programming → Extended</span>: 0x10 0x03
-
-<span class="comment">// 安全转移</span>
-<span class="service">Locked → Waiting</span>: 0x27 0x01 (请求种子)
-<span class="service">Waiting → Unlocked</span>: 0x27 0x02 (密钥正确)
-<span class="service">Unlocked → Locked</span>: 会话切换 或 超时</pre>
-                </div>
-            </div>
-        </div>
-
-        <!-- CAPL实现 -->
-        <div id="capl" class="tab-content">
-            <div class="card">
-                <h2>📝 会话状态机CAPL实现</h2>
-                <div class="code-block">
-<pre><span class="keyword">variables</span>
-{
-    <span class="keyword">enum</span> <span class="type">UdsSessionState</span> {
-        STATE_DEFAULT,
-        STATE_EXTENDED,
-        STATE_PROGRAMMING
-    };
-    <span class="type">UdsSessionState</span> g_currentSession = STATE_DEFAULT;
-    <span class="type">int</span> g_securityUnlocked = <span class="number">0</span>;
-    <span class="type">msTimer</span> S3Timer;
-}
-
-<span class="comment">// 会话控制处理</span>
-<span class="keyword">on message</span> <span class="number">0x7E0</span>
-{
-    <span class="keyword">if</span> (<span class="keyword">this</span>.byte(<span class="number">0</span>) == <span class="number">0x10</span>)
-    {
-        <span class="type">byte</span> sessionType = <span class="keyword">this</span>.byte(<span class="number">1</span>);
-        <span class="keyword">switch</span> (sessionType & <span class="number">0x7F</span>)
-        {
-            <span class="keyword">case</span> <span class="number">0x01</span>: g_currentSession = STATE_DEFAULT; <span class="keyword">break</span>;
-            <span class="keyword">case</span> <span class="number">0x02</span>: g_currentSession = STATE_PROGRAMMING; <span class="keyword">break</span>;
-            <span class="keyword">case</span> <span class="number">0x03</span>: g_currentSession = STATE_EXTENDED; <span class="keyword">break</span>;
-            <span class="keyword">default</span>: <span class="function">sendNRC</span>(<span class="number">0x10</span>, <span class="number">0x12</span>);
-        }
-        <span class="function">cancelTimer</span>(S3Timer);
-        <span class="keyword">if</span> (g_currentSession != STATE_DEFAULT)
-            <span class="function">setTimer</span>(S3Timer, <span class="number">5000</span>);
-    }
-}
-
-<span class="comment">// S3超时处理</span>
-<span class="keyword">on timer</span> S3Timer
-{
-    g_currentSession = STATE_DEFAULT;
-    g_securityUnlocked = <span class="number">0</span>;
-}
-
-<span class="comment">// 0x3E 保持会话</span>
-<span class="keyword">on message</span> <span class="number">0x7E0</span>
-{
-    <span class="keyword">if</span> (<span class="keyword">this</span>.byte(<span class="number">0</span>) == <span class="number">0x3E</span>)
-    {
-        <span class="function">cancelTimer</span>(S3Timer);
-        <span class="function">setTimer</span>(S3Timer, <span class="number">5000</span>);
-    }
-}</pre>
-                </div>
-            </div>
-            <div class="card">
-                <h2>🛡️ 安全访问CAPL实现</h2>
-                <div class="code-block">
-<pre><span class="keyword">variables</span>
-{
-    <span class="keyword">enum</span> <span class="type">SecurityState</span> { SEC_LOCKED, SEC_WAITING_KEY, SEC_UNLOCKED };
-    <span class="type">SecurityState</span> g_securityState = SEC_LOCKED;
-    <span class="type">byte</span> g_seed[<span class="number">4</span>];
-}
-
-<span class="keyword">on message</span> <span class="number">0x7E0</span>
-{
-    <span class="keyword">if</span> (<span class="keyword">this</span>.byte(<span class="number">0</span>) == <span class="number">0x27</span>)
-    {
-        <span class="type">byte</span> subFunc = <span class="keyword">this</span>.byte(<span class="number">1</span>);
-        <span class="type">byte</span> level = subFunc & <span class="number">0x7F</span>;
-        
-        <span class="keyword">if</span> (level % <span class="number">2</span> == <span class="number">1</span>) <span class="comment">// 请求种子</span>
-        {
-            <span class="function">generateSeed</span>(g_seed);
-            <span class="function">sendSeedResponse</span>(level, g_seed);
-            g_securityState = SEC_WAITING_KEY;
-        }
-        <span class="keyword">else</span> <span class="comment">// 发送密钥</span>
-        {
-            <span class="type">byte</span> key[<span class="number">4</span>];
-            <span class="keyword">for</span>(<span class="type">int</span> i=<span class="number">0</span>; i<<span class="number">4</span>; i++) key[i] = <span class="keyword">this</span>.byte(<span class="number">2</span>+i);
-            
-            <span class="type">byte</span> expected[<span class="number">4</span>];
-            <span class="function">calculateKey</span>(g_seed, expected);
-            
-            <span class="keyword">if</span> (<span class="function">compareKeys</span>(key, expected))
-            {
-                g_securityState = SEC_UNLOCKED;
-                <span class="function">sendPositiveResponse</span>(<span class="number">0x67</span>, subFunc);
-            }
-            <span class="keyword">else</span>
-            {
-                <span class="function">sendNRC</span>(<span class="number">0x27</span>, <span class="number">0x35</span>);
-            }
-        }
-    }
-}
-
-<span class="function">void</span> <span class="type">calculateKey</span>(<span class="type">byte</span> seed[<span class="number">4</span>], <span class="type">byte</span> key[<span class="number">4</span>])
-{
-    key[<span class="number">0</span>] = (seed[<span class="number">0</span>] ^ <span class="number">0xA5</span>);
-    key[<span class="number">1</span>] = (seed[<span class="number">1</span>] ^ <span class="number">0x5A</span>);
-    key[<span class="number">2</span>] = (seed[<span class="number">2</span>] ^ <span class="number">0xC3</span>);
-    key[<span class="number">3</span>] = (seed[<span class="number">3</span>] ^ <span class="number">0x3C</span>);
-}</pre>
-                </div>
-            </div>
+        <!-- 常见NRC -->
+        <div class="card">
+            <h2>⚠️ 常见否定响应码 (NRC)</h2>
+            <table class="table">
+                <tr><th>NRC</th><th>名称</th><th>含义</th></tr>
+                <tr><td><span class="code">0x11</span></td><td>serviceNotSupported</td><td>服务不支持</td></tr>
+                <tr><td><span class="code">0x12</span></td><td>subFunctionNotSupported</td><td>子功能不支持</td></tr>
+                <tr><td><span class="code">0x22</span></td><td>conditionsNotCorrect</td><td>条件不满足</td></tr>
+                <tr><td><span class="code">0x33</span></td><td>securityAccessDenied</td><td>安全访问被拒绝</td></tr>
+                <tr><td><span class="code">0x35</span></td><td>invalidKey</td><td>密钥无效</td></tr>
+                <tr><td><span class="code">0x78</span></td><td>requestCorrectlyReceived</td><td>等待中(ECU忙)</td></tr>
+            </table>
         </div>
 
         <!-- 交互演示 -->
-        <div id="demo" class="tab-content">
-            <div class="card">
-                <h2>🎮 UDS诊断交互演示</h2>
-                <div class="grid">
-                    <div class="panel">
-                        <h3>发送诊断请求</h3>
-                        <button class="btn btn-uds" onclick="sendSessionControl('03')">🔓 扩展会话 0x10 03</button>
-                        <button class="btn btn-uds" onclick="sendSessionControl('01')">🔙 默认会话 0x10 01</button>
-                        <button class="btn btn-sm" onclick="requestSeed()">🔐 请求种子 0x27 01</button>
-                        <button class="btn btn-sm" onclick="readDTC()">📖 读DTC 0x19 0A</button>
-                        <button class="btn btn-uds" onclick="readVIN()">🚗 读VIN 0x22 F190</button>
-                        <button class="btn btn-uds" onclick="clearDTC()">🗑️ 清除DTC 0x14</button>
-                    </div>
-                    <div class="panel">
-                        <h3>当前状态</h3>
-                        <div style="margin: 10px 0;"><span style="color: #888;">会话状态:</span> <span id="currentSession" style="color: #ffd700; font-weight: bold;">Default</span></div>
-                        <div style="margin: 10px 0;"><span style="color: #888;">安全状态:</span> <span id="securityStatus" style="color: #f85149; font-weight: bold;">Locked</span></div>
-                        <div style="margin: 10px 0;"><span style="color: #888;">DTC计数:</span> <span id="dtcCount" style="color: #58a6ff;">0</span></div>
-                    </div>
-                </div>
-                <h3 style="color: #ffd700; margin: 15px 0;">通信日志</h3>
-                <div class="console" id="diagConsole"><div class="console-line info">=== UDS诊断日志 ===</div></div>
+        <div class="card">
+            <h2>🎮 诊断交互演示</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                <button class="btn btn-extended" onclick="sendUDS('10 03')">🔓 扩展会话</button>
+                <button class="btn btn-default" onclick="sendUDS('10 01')">🔙 默认会话</button>
+                <button class="btn btn-extended" onclick="sendUDS('27 01')">🔐 请求种子</button>
+                <button class="btn btn-extended" onclick="sendUDS('22 F1 90')">🚗 读VIN</button>
+                <button class="btn btn-extended" onclick="sendUDS('19 0A')">📖 读DTC</button>
+                <button class="btn btn-default" onclick="sendUDS('14 FF FF FF')">🗑️ 清除DTC</button>
             </div>
+            <div id="console" class="console"></div>
         </div>
     </div>
 
     <script>
         let currentSession = 'Default';
         let securityState = 'Locked';
-        let dtcCount = 0;
-        let seed = [];
-
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+        
+        function log(type, msg) {
+            const c = document.getElementById('console');
+            const t = new Date().toLocaleTimeString('en-GB');
+            const div = document.createElement('div');
+            div.className = 'log log-' + type;
+            div.textContent = `[${t}] ${msg}`;
+            c.appendChild(div);
+            c.scrollTop = c.scrollHeight;
         }
-
-        function addLog(type, msg) {
-            const console = document.getElementById('diagConsole');
-            const line = document.createElement('div');
-            line.className = 'console-line ' + type;
-            const time = new Date().toLocaleTimeString('en-GB');
-            line.textContent = `[${time}] ${msg}`;
-            console.appendChild(line);
-            console.scrollTop = console.scrollHeight;
-        }
-
-        function updateUI() {
-            document.getElementById('currentSession').textContent = currentSession;
-            document.getElementById('securityStatus').textContent = securityState;
-            document.getElementById('dtcCount').textContent = dtcCount;
-
+        
+        function updateState() {
             document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
-            if (currentSession === 'Default') {
-                document.getElementById('state-default').classList.add('active');
-                document.getElementById('sessionBar').style.width = '33%';
-                document.getElementById('sessionBar').className = 'status-fill default';
-                document.getElementById('sessionBar').textContent = 'Default Session';
-            } else if (currentSession === 'Extended') {
-                document.getElementById('state-extended').classList.add('active');
-                document.getElementById('sessionBar').style.width = '66%';
-                document.getElementById('sessionBar').className = 'status-fill extended';
-                document.getElementById('sessionBar').textContent = 'Extended Session';
-            } else if (currentSession === 'Programming') {
-                document.getElementById('state-programming').classList.add('active');
-                document.getElementById('sessionBar').style.width = '100%';
-                document.getElementById('sessionBar').className = 'status-fill programming';
-                document.getElementById('sessionBar').textContent = 'Programming Session';
-            }
-
-            document.getElementById('sec-locked').classList.toggle('active', securityState === 'Locked');
-            document.getElementById('sec-unlocked').classList.toggle('active', securityState === 'Unlocked');
+            if (currentSession === 'Default') document.getElementById('s-default').classList.add('active');
+            else if (currentSession === 'Extended') document.getElementById('s-extended').classList.add('active');
+            else if (currentSession === 'Programming') document.getElementById('s-programming').classList.add('active');
         }
-
-        function switchSession(session) {
+        
+        function switchS(session) {
             if (session === 'default') {
-                addLog('tx', 'TX: 10 01              [请求] 默认会话');
+                log('tx', 'TX: 10 01 - 请求默认会话');
                 currentSession = 'Default';
                 securityState = 'Locked';
-                setTimeout(() => addLog('rx', 'RX: 50 01 00 32 00 C3 [响应] 会话切换成功'), 100);
+                setTimeout(() => log('rx', 'RX: 50 01 00 32 00 C3 - 成功, S3=5s'), 100);
             } else if (session === 'extended') {
-                addLog('tx', 'TX: 10 03              [请求] 扩展会话');
+                log('tx', 'TX: 10 03 - 请求扩展会话');
                 currentSession = 'Extended';
-                setTimeout(() => { addLog('rx', 'RX: 50 03 00 32 00 C3 [响应] S3定时器启动'); }, 100);
+                setTimeout(() => log('rx', 'RX: 50 03 00 32 00 C3 - 成功'), 100);
             } else if (session === 'programming') {
-                addLog('tx', 'TX: 10 02              [请求] 编程会话');
+                log('tx', 'TX: 10 02 - 请求编程会话');
                 currentSession = 'Programming';
                 securityState = 'Locked';
-                setTimeout(() => addLog('rx', 'RX: 50 02 00 32 00 C3 [响应] 编程会话'), 100);
+                setTimeout(() => log('rx', 'RX: 50 02 00 32 00 C3 - 成功'), 100);
             }
-            updateUI();
+            updateState();
         }
-
-        function sendSessionControl(param) {
-            addLog('tx', `TX: 10 ${param}              [请求] 会话控制`);
-            setTimeout(() => addLog('rx', `RX: 50 ${param} 00 32 00 C3 [响应]`), 100);
-            if (param === '01') { currentSession = 'Default'; securityState = 'Locked'; }
-            else if (param === '03') currentSession = 'Extended';
-            else if (param === '02') { currentSession = 'Programming'; securityState = 'Locked'; }
-            updateUI();
-        }
-
-        function requestSeed() {
-            if (currentSession === 'Default') {
-                addLog('error', 'RX: 7F 22 22          [否定] 需要扩展会话');
-                return;
-            }
-            addLog('tx', 'TX: 27 01              [安全] 请求种子');
-            seed = [0x5A, 0xA5, 0xC3, 0x3C];
-            setTimeout(() => addLog('rx', `RX: 67 01 ${seed.map(b => b.toString(16).toUpperCase().padStart(2,'0')).join(' ')} [响应] 种子`), 100);
-        }
-
-        function readDTC() {
-            addLog('tx', 'TX: 19 0A              [读DTC] 所有故障');
-            dtcCount = Math.floor(Math.random() * 3);
+        
+        function sendUDS(cmd) {
+            const cmds = cmd.split(' ');
+            const sid = parseInt(cmds[0], 16);
+            
+            log('tx', `TX: ${cmd.toUpperCase()} - 诊断请求`);
+            
+            // 模拟响应
             setTimeout(() => {
-                if (dtcCount > 0) addLog('rx', `RX: 59 0A 01 P100 P200 09 [响应] DTC数量: ${dtcCount}`);
-                else addLog('rx', 'RX: 59 0A 00          [响应] 无故障码');
-                updateUI();
-            }, 100);
+                if (sid === 0x10) {
+                    const sub = cmds[1] ? parseInt(cmds[1], 16) : 1;
+                    if (sub === 0x01) { currentSession = 'Default'; securityState = 'Locked'; }
+                    else if (sub === 0x03) currentSession = 'Extended';
+                    else if (sub === 0x02) { currentSession = 'Programming'; securityState = 'Locked'; }
+                    log('rx', `RX: ${(sid+0x40).toString(16).toUpperCase()} ${cmds[1]} 00 32 00 C3 - 会话切换成功`);
+                } else if (sid === 0x22) {
+                    log('rx', 'RX: 62 F1 90 4C 42 58 32 30 31 39 5A 4B 30 30 30 30 31 - VIN: LBOX2019ZK00001');
+                } else if (sid === 0x27) {
+                    if (cmds[1] === '01') log('rx', 'RX: 67 01 5A A5 C3 3C - 种子');
+                    else log('rx', 'RX: 67 02 - 密钥验证成功');
+                } else if (sid === 0x19) {
+                    log('rx', 'RX: 59 0A 00 - 无故障码');
+                } else if (sid === 0x14) {
+                    log('rx', 'RX: 54 - 清除完成');
+                }
+                updateState();
+            }, 150);
         }
-
-        function readVIN() {
-            if (currentSession === 'Default') { addLog('error', 'RX: 7F 22 22          [否定] 需要扩展会话'); return; }
-            addLog('tx', 'TX: 22 F1 90           [读数据] VIN');
-            setTimeout(() => addLog('rx', 'RX: 62 F1 90 4C 42 58 32 30 31 39 5A 4B 30 30 30 30 31 [响应] LBOX2019ZK00001'), 100);
-        }
-
-        function clearDTC() {
-            addLog('tx', 'TX: 14 FF FF FF        [清除] 所有DTC');
-            dtcCount = 0;
-            setTimeout(() => { addLog('rx', 'RX: 54                [响应] 清除完成'); updateUI(); }, 100);
-        }
-
-        updateUI();
+        
+        log('info', '=== UDS诊断模拟器就绪 ===');
+        updateState();
     </script>
 </body>
 </html>

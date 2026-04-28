@@ -1,0 +1,2 @@
+obj\Release\net8.0-windows\win-x64/GrpcStream.cs \
+obj\Release\net8.0-windows\win-x64/GrpcStreamGrpc.cs: grpc_stream.proto
